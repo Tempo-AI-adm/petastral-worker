@@ -176,10 +176,11 @@ def call_gemini(prompt):
 def save_to_supabase(data, signs, report_text):
     headers = _sb_headers()
 
-    # 1. Upsert owner
+    # 1. Upsert owner (on conflict email, just return existing)
+    owner_headers = {**headers, "Prefer": "resolution=merge-duplicates,return=representation"}
     owner_resp = requests.post(
-        _sb_url("/rest/v1/owners"),
-        headers={**headers, "Prefer": "resolution=merge-duplicates,return=representation"},
+        _sb_url("/rest/v1/owners?on_conflict=email"),
+        headers=owner_headers,
         json={"name": data["owner_name"], "email": data["owner_email"]},
         timeout=15,
     )
