@@ -19,11 +19,7 @@ app = Flask(__name__)
 # Config
 # ---------------------------------------------------------------------------
 
-GEMINI_MODEL = "gemini-2.5-flash"
-GEMINI_URL = (
-    f"https://generativelanguage.googleapis.com/v1beta/models/"
-    f"{GEMINI_MODEL}:generateContent"
-)
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/"
 
 GEMINI_SYSTEM_INSTRUCTION = (
     "You are PetAstral's intelligence engine. Generate a professional, realistic "
@@ -147,18 +143,15 @@ Em seguida, liste todos os posicionamentos planetários.
 **PILAR DE BEM-ESTAR (FINAL): Dicas Práticas para o Bem-Estar**"""
 
 
-def call_gemini(prompt):
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        raise RuntimeError("GEMINI_API_KEY not set")
-
+def _call_gemini_model(prompt, model, api_key):
+    """Try one model with 3 attempts (5s/10s/20s backoff). Returns text or raises."""
+    url = f"{GEMINI_BASE_URL}{model}:generateContent"
     delays = [5, 10, 20]
-    full_url = f"{GEMINI_URL}?key=REDACTED"
     for attempt, delay in enumerate(delays, start=1):
-        print(f"[Gemini] attempt {attempt}/3 -> {GEMINI_URL}", flush=True)
+        print(f"[Gemini] model={model} attempt {attempt}/3 -> {url}", flush=True)
         try:
             resp = requests.post(
-                GEMINI_URL,
+                url,
                 params={"key": api_key},
                 headers={
                     "User-Agent": "PetAstral-Worker/1.0",
@@ -167,7 +160,7 @@ def call_gemini(prompt):
                 json={
                     "system_instruction": {"parts": [{"text": GEMINI_SYSTEM_INSTRUCTION}]},
                     "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-                    "generationConfig": {"temperature": 0.7, "maxOutputTokens": 6000},
+                    "generationConfig": {"temperature": 0.7, "maxOutputTokens": 8192},
                 },
                 timeout=120,
             )
@@ -189,8 +182,24 @@ def call_gemini(prompt):
                 time.sleep(delay)
             else:
                 raise RuntimeError(
-                    f"Gemini failed after {len(delays)} attempts: {exc}"
+                    f"model={model} failed after {len(delays)} attempts: {exc}"
                 ) from exc
+
+
+def call_gemini(prompt):
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY not set")
+
+    primary_model = "gemini-2.5-flash"
+    fallback_model = "gemini-2.5-flash-lite"
+
+    try:
+        return _call_gemini_model(prompt, primary_model, api_key)
+    except RuntimeError as primary_exc:
+        print(f"[Gemini] primary model failed: {primary_exc}. Trying fallback {fallback_model}", flush=True)
+
+    return _call_gemini_model(prompt, fallback_model, api_key)
 
 
 # ---------------------------------------------------------------------------
