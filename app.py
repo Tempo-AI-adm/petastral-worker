@@ -19,7 +19,7 @@ app = Flask(__name__)
 # Config
 # ---------------------------------------------------------------------------
 
-GEMINI_MODEL = "gemini-2.0-flash-001"
+GEMINI_MODEL = "gemini-2.5-flash-preview-05-20"
 GEMINI_URL = (
     f"https://generativelanguage.googleapis.com/v1beta/models/"
     f"{GEMINI_MODEL}:generateContent"
