@@ -5,6 +5,7 @@ Processes pending jobs: geocoding → ephemeris → Gemini → save to Supabase.
 
 import json
 import os
+import time
 from datetime import datetime, timezone
 
 import requests
@@ -151,22 +152,41 @@ def call_gemini(prompt):
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY not set")
 
-    resp = requests.post(
-        GEMINI_URL,
-        params={"key": api_key},
-        json={
-            "system_instruction": {"parts": [{"text": GEMINI_SYSTEM_INSTRUCTION}]},
-            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.7, "maxOutputTokens": 6000},
-        },
-        timeout=120,
-    )
-    resp.raise_for_status()
-    result = resp.json()
-    try:
-        return result["candidates"][0]["content"]["parts"][0]["text"]
-    except (KeyError, IndexError) as exc:
-        raise RuntimeError(f"Unexpected Gemini response: {result}") from exc
+    delays = [5, 10, 20]
+    for attempt, delay in enumerate(delays, start=1):
+        try:
+            resp = requests.post(
+                GEMINI_URL,
+                params={"key": api_key},
+                headers={
+                    "User-Agent": "PetAstral-Worker/1.0",
+                    "Accept": "application/json",
+                },
+                json={
+                    "system_instruction": {"parts": [{"text": GEMINI_SYSTEM_INSTRUCTION}]},
+                    "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                    "generationConfig": {"temperature": 0.7, "maxOutputTokens": 6000},
+                },
+                timeout=120,
+            )
+            if resp.status_code == 503 and attempt < len(delays):
+                raise requests.exceptions.HTTPError(
+                    f"503 Service Unavailable (attempt {attempt})", response=resp
+                )
+            resp.raise_for_status()
+            result = resp.json()
+            try:
+                return result["candidates"][0]["content"]["parts"][0]["text"]
+            except (KeyError, IndexError) as exc:
+                raise RuntimeError(f"Unexpected Gemini response: {result}") from exc
+        except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError,
+                requests.exceptions.Timeout) as exc:
+            if attempt < len(delays):
+                time.sleep(delay)
+            else:
+                raise RuntimeError(
+                    f"Gemini failed after {len(delays)} attempts: {exc}"
+                ) from exc
 
 
 # ---------------------------------------------------------------------------
