@@ -19,7 +19,7 @@ app = Flask(__name__)
 # Config
 # ---------------------------------------------------------------------------
 
-GEMINI_MODEL = "gemini-2.5-flash-preview-05-20"
+GEMINI_MODEL = "gemini-2.5-flash"
 GEMINI_URL = (
     f"https://generativelanguage.googleapis.com/v1beta/models/"
     f"{GEMINI_MODEL}:generateContent"
@@ -153,7 +153,9 @@ def call_gemini(prompt):
         raise RuntimeError("GEMINI_API_KEY not set")
 
     delays = [5, 10, 20]
+    full_url = f"{GEMINI_URL}?key=REDACTED"
     for attempt, delay in enumerate(delays, start=1):
+        print(f"[Gemini] attempt {attempt}/3 -> {GEMINI_URL}", flush=True)
         try:
             resp = requests.post(
                 GEMINI_URL,
@@ -170,6 +172,7 @@ def call_gemini(prompt):
                 timeout=120,
             )
             if resp.status_code == 503 and attempt < len(delays):
+                print(f"[Gemini] 503 on attempt {attempt} - body: {resp.text[:500]}", flush=True)
                 raise requests.exceptions.HTTPError(
                     f"503 Service Unavailable (attempt {attempt})", response=resp
                 )
@@ -181,6 +184,7 @@ def call_gemini(prompt):
                 raise RuntimeError(f"Unexpected Gemini response: {result}") from exc
         except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError,
                 requests.exceptions.Timeout) as exc:
+            print(f"[Gemini] error on attempt {attempt}: {exc}", flush=True)
             if attempt < len(delays):
                 time.sleep(delay)
             else:
