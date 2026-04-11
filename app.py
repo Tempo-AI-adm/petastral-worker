@@ -5,6 +5,7 @@ Processes pending jobs: geocoding → ephemeris → Gemini → save to Supabase.
 
 import json
 import os
+import re
 import threading
 import time
 from datetime import datetime, timezone
@@ -94,54 +95,105 @@ def fail_job(job_id, message):
 def build_gemini_prompt(data, signs):
     hour_display = "não informado" if data.get("hour_unknown") else f"{data['hour']:02d}"
     minute_display = f"{data['minute']:02d}"
+    return f"""Você é um astrólogo especialista em pets. Gere um laudo astrológico completo para o pet abaixo.
 
-    return f"""DADOS DO PET:
+DADOS DO PET:
 Nome: {data['pet_name']}
 Tipo: {data['pet_type']}
 Raça/Pelagem: {data['breed']}
 Sexo: {data['sex']}
 Cor: {data.get('pet_color') or 'não informado'}
-Marcações: {data.get('pet_markings') or 'não informado'}
 Data de Nascimento: {data['day']:02d}/{data['month']:02d}/{data['year']} às {hour_display}:{minute_display}h
 Local: {data['city']}, {data['country']}
 
-DADOS ASTRAIS CALCULADOS:
-- Sol em {signs['sun']}
-- Lua em {signs['moon']}
-- Mercúrio em {signs['mercury']}
-- Vênus em {signs['venus']}
-- Marte em {signs['mars']}
-- Júpiter em {signs['jupiter']}
-- Saturno em {signs['saturn']}
-- Urano em {signs['uranus']}
-- Netuno em {signs['neptune']}
-- Plutão em {signs['pluto']}
-- Elemento Predominante: {signs['dominant_element']}
+POSICIONAMENTOS ASTRAIS:
+Sol em {signs['sun']}, Lua em {signs['moon']}, Mercúrio em {signs['mercury']},
+Vênus em {signs['venus']}, Marte em {signs['mars']}, Júpiter em {signs['jupiter']},
+Saturno em {signs['saturn']}, Urano em {signs['uranus']}, Netuno em {signs['neptune']},
+Plutão em {signs['pluto']}, Elemento Predominante: {signs['dominant_element']}
 
-TAREFA: GERE O GUIA PETASTRAL COMPLETO
+INSTRUÇÃO CRÍTICA: Responda APENAS com um objeto JSON válido, sem texto antes ou depois, sem markdown, sem blocos de código. O JSON deve seguir exatamente esta estrutura:
 
-ESTRUTURA DO LAUDO:
+{{
+  "schema_version": "v1",
+  "visao_astral": {{
+    "personalidade": "frase descritiva",
+    "emocoes": "frase descritiva",
+    "energia": "frase descritiva",
+    "relacionamento": "frase descritiva"
+  }},
+  "capitulos": [
+    {{
+      "numero": 1,
+      "titulo": "Sol em {signs['sun']}: Essência, Comportamento e Personalidade",
+      "conteudo": "mínimo 300 palavras sobre este tema"
+    }},
+    {{
+      "numero": 2,
+      "titulo": "Lua em {signs['moon']}: Emoções, Necessidades e Vínculo com o Tutor",
+      "conteudo": "mínimo 300 palavras"
+    }},
+    {{
+      "numero": 3,
+      "titulo": "Elementos Astrológicos: O Ambiente e a Energia Ideal",
+      "conteudo": "mínimo 300 palavras"
+    }},
+    {{
+      "numero": 4,
+      "titulo": "Mercúrio em {signs['mercury']}: Como Seu Pet Se Comunica",
+      "conteudo": "mínimo 300 palavras"
+    }},
+    {{
+      "numero": 5,
+      "titulo": "Vênus em {signs['venus']}: Relacionamentos e Conexões",
+      "conteudo": "mínimo 300 palavras"
+    }},
+    {{
+      "numero": 6,
+      "titulo": "Marte em {signs['mars']}: Energia, Atividade e Comportamento",
+      "conteudo": "mínimo 300 palavras"
+    }},
+    {{
+      "numero": 7,
+      "titulo": "Júpiter em {signs['jupiter']}: Sorte, Descobertas e Expansão",
+      "conteudo": "mínimo 300 palavras"
+    }},
+    {{
+      "numero": 8,
+      "titulo": "Saturno em {signs['saturn']}: Desafios e Aprendizados",
+      "conteudo": "mínimo 300 palavras"
+    }},
+    {{
+      "numero": 9,
+      "titulo": "Urano, Netuno e Plutão: Transformações e Propósito",
+      "conteudo": "mínimo 300 palavras"
+    }},
+    {{
+      "numero": 10,
+      "titulo": "Pilar de Bem-Estar: Dicas Práticas",
+      "conteudo": "mínimo 200 palavras com dicas práticas"
+    }}
+  ]
+}}"""
 
-**0. VISÃO ASTRAL (Resumo Executivo)**
-Forneça uma frase resumo para cada dimensão:
-- Personalidade:
-- Emoções:
-- Energia:
-- Relacionamento:
-Em seguida, liste todos os posicionamentos planetários.
 
-**CAPÍTULOS PRINCIPAIS** (cada capítulo mínimo 300 palavras, com 2-3 subtópicos):
+def _parse_gemini_response(raw_text):
+    """Parse Gemini response: extract JSON v1 if present, otherwise return raw text."""
+    raw = raw_text.strip()
 
-**1. Sol em {signs['sun']}: Essência, Comportamento e Personalidade**
-**2. Lua em {signs['moon']}: Emoções, Necessidades e Vínculo com o Tutor**
-**3. Elementos Astrológicos: O Ambiente e a Energia Ideal**
-**4. Mercúrio em {signs['mercury']}: Como Seu Pet Se Comunica e Processa Informações**
-**5. Vênus em {signs['venus']}: Relacionamentos e Conexões**
-**6. Marte em {signs['mars']}: Energia, Atividade e Comportamento**
-**7. Júpiter em {signs['jupiter']}: Sorte, Descobertas e Expansão**
-**8. Saturno em {signs['saturn']}: Desafios, Limites e Aprendizados de Vida**
-**9. Urano, Netuno e Plutão: Transformações, Instintos e Propósito do Seu Pet**
-**PILAR DE BEM-ESTAR (FINAL): Dicas Práticas para o Bem-Estar**"""
+    # Remove possible markdown code block wrapper
+    if raw.startswith('```'):
+        raw = re.sub(r'^```[a-z]*\n?', '', raw)
+        raw = re.sub(r'\n?```$', '', raw)
+
+    try:
+        parsed = json.loads(raw)
+        if parsed.get('schema_version') == 'v1' and 'capitulos' in parsed:
+            return json.dumps(parsed, ensure_ascii=False)
+        else:
+            return raw  # fallback: JSON mas sem schema esperado
+    except (json.JSONDecodeError, ValueError):
+        return raw  # fallback: texto bruto
 
 
 def _call_gemini_model(prompt, model, api_key):
@@ -384,7 +436,7 @@ def process_job():
 
     # 4. Gemini report generation
     try:
-        report_text = call_gemini(build_gemini_prompt(data, signs))
+        report_text = _parse_gemini_response(call_gemini(build_gemini_prompt(data, signs)))
     except Exception as exc:
         fail_job(job_id, f"Gemini failed: {exc}")
         return jsonify({"error": f"Gemini error: {exc}"}), 502
@@ -441,7 +493,7 @@ def _process_generate(payment_id, pet_data, email):
         }
 
         # 3. Gemini report generation
-        report_text = call_gemini(build_gemini_prompt(data, signs))
+        report_text = _parse_gemini_response(call_gemini(build_gemini_prompt(data, signs)))
 
         # 4. Save owners → pets → reports
         report_id, _pet_id = save_to_supabase(data, signs, report_text)
