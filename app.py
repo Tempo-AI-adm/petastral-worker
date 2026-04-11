@@ -290,7 +290,7 @@ def _map_pet_data(pet_data, email):
         "pet_name":     pet_data.get("nome") or "",
         "pet_type":     pet_data.get("tipo") or "",
         "breed":        pet_data.get("raca") or "",
-        "sex":          pet_data.get("sexo") or "não informado",
+        "sex":          "female" if pet_data.get("sexo") == "femea" else "male",
         "pet_color":    ", ".join(pet_data["cor"]) if isinstance(pet_data.get("cor"), list) else (pet_data.get("cor") or ""),
         "pet_markings": pet_data.get("pelo"),
         "city":         pet_data.get("cidade") or "",
