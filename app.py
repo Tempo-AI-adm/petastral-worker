@@ -226,23 +226,26 @@ def save_to_supabase(data, signs, report_text):
     }
     birth_data["hour_unknown"] = data.get("hour_unknown", False)
 
+    pet_payload = {
+        "owner_id":      owner_id,
+        "owner_email":   data["owner_email"],
+        "name":          data["pet_name"],
+        "type":          data["pet_type"],
+        "breed":         data["breed"],
+        "sex":           data["sex"],
+        "pet_color":     data.get("pet_color"),
+        "pet_markings":  data.get("pet_markings"),
+        "birth_data":    birth_data,
+    }
+    print(f"[save_to_supabase] pet_payload={pet_payload}", flush=True)
     pet_resp = requests.post(
         _sb_url("/rest/v1/pets"),
         headers=headers,
-        json={
-            "owner_id":      owner_id,
-            "owner_email":   data["owner_email"],
-            "name":          data["pet_name"],
-            "type":          data["pet_type"],
-            "breed":         data["breed"],
-            "sex":           data["sex"],
-            "pet_color":     data.get("pet_color"),
-            "pet_markings":  data.get("pet_markings"),
-            "birth_data":    birth_data,
-        },
+        json=pet_payload,
         timeout=15,
     )
-    pet_resp.raise_for_status()
+    if not pet_resp.ok:
+        raise Exception(f"{pet_resp.status_code} {pet_resp.reason} — {pet_resp.text}")
     pet_id = pet_resp.json()[0]["id"]
 
     # 3. Insert report
