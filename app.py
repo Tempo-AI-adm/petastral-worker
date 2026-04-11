@@ -5,6 +5,7 @@ Processes pending jobs: geocoding → ephemeris → Gemini → save to Supabase.
 
 import json
 import os
+import threading
 import time
 from datetime import datetime, timezone
 
@@ -410,6 +411,59 @@ def process_job():
     return jsonify({"job_id": job_id, "status": "completed", **output})
 
 
+def _process_generate(payment_id, pet_data, email):
+    try:
+        # 1. Map sessionStorage → internal data dict
+        data = _map_pet_data(pet_data, email)
+
+        # 2. Astro calculation (geocoding → ephemeris → signs)
+        raw_signs = astro_calculator.calculate(
+            city=data["city"],
+            country=data["country"],
+            year=data["year"],
+            month=data["month"],
+            day=data["day"],
+            hour=data["hour"],
+            minute=data["minute"],
+        )
+        signs = {
+            "sun":              raw_signs["sun_sign"],
+            "moon":             raw_signs["moon_sign"],
+            "mercury":          raw_signs["mercury_sign"],
+            "venus":            raw_signs["venus_sign"],
+            "mars":             raw_signs["mars_sign"],
+            "jupiter":          raw_signs["jupiter_sign"],
+            "saturn":           raw_signs["saturn_sign"],
+            "uranus":           raw_signs["uranus_sign"],
+            "neptune":          raw_signs["neptune_sign"],
+            "pluto":            raw_signs["pluto_sign"],
+            "dominant_element": raw_signs["dominant_element"],
+        }
+
+        # 3. Gemini report generation
+        report_text = call_gemini(build_gemini_prompt(data, signs))
+
+        # 4. Save owners → pets → reports
+        report_id, _pet_id = save_to_supabase(data, signs, report_text)
+
+        # 5. Link report back to the payment row
+        try:
+            patch_resp = requests.patch(
+                _sb_url(f"/rest/v1/payments?id=eq.{payment_id}"),
+                headers=_sb_headers(),
+                json={"report_id": report_id},
+                timeout=10,
+            )
+            patch_resp.raise_for_status()
+        except Exception as exc:
+            print(f"[generate] WARNING: payment patch failed for {payment_id}: {exc}", flush=True)
+
+        print(f"[generate] done — payment_id={payment_id} report_id={report_id}", flush=True)
+
+    except Exception as exc:
+        print(f"[generate] ERROR background processing for payment_id={payment_id}: {exc}", flush=True)
+
+
 @app.route("/generate", methods=["POST", "OPTIONS"])
 def generate():
     # CORS preflight
@@ -432,63 +486,13 @@ def generate():
     if not email:
         return jsonify({"error": "Missing email"}), 400
 
-    # 1. Map sessionStorage → internal data dict
-    data = _map_pet_data(pet_data, email)
+    threading.Thread(
+        target=_process_generate,
+        args=(payment_id, pet_data, email),
+        daemon=True,
+    ).start()
 
-    # 2. Astro calculation (geocoding → ephemeris → signs)
-    try:
-        raw_signs = astro_calculator.calculate(
-            city=data["city"],
-            country=data["country"],
-            year=data["year"],
-            month=data["month"],
-            day=data["day"],
-            hour=data["hour"],
-            minute=data["minute"],
-        )
-    except Exception as exc:
-        return jsonify({"error": f"Astro calculation failed: {exc}"}), 422
-
-    signs = {
-        "sun":              raw_signs["sun_sign"],
-        "moon":             raw_signs["moon_sign"],
-        "mercury":          raw_signs["mercury_sign"],
-        "venus":            raw_signs["venus_sign"],
-        "mars":             raw_signs["mars_sign"],
-        "jupiter":          raw_signs["jupiter_sign"],
-        "saturn":           raw_signs["saturn_sign"],
-        "uranus":           raw_signs["uranus_sign"],
-        "neptune":          raw_signs["neptune_sign"],
-        "pluto":            raw_signs["pluto_sign"],
-        "dominant_element": raw_signs["dominant_element"],
-    }
-
-    # 3. Gemini report generation
-    try:
-        report_text = call_gemini(build_gemini_prompt(data, signs))
-    except Exception as exc:
-        return jsonify({"error": f"Gemini error: {exc}"}), 502
-
-    # 4. Save owners → pets → reports
-    try:
-        report_id, _pet_id = save_to_supabase(data, signs, report_text)
-    except Exception as exc:
-        return jsonify({"error": f"Supabase save error: {exc}"}), 502
-
-    # 5. Link report back to the payment row
-    try:
-        patch_resp = requests.patch(
-            _sb_url(f"/rest/v1/payments?id=eq.{payment_id}"),
-            headers=_sb_headers(),
-            json={"report_id": report_id},
-            timeout=10,
-        )
-        patch_resp.raise_for_status()
-    except Exception as exc:
-        # Report is already saved — log but do not fail the request
-        print(f"[generate] WARNING: payment patch failed for {payment_id}: {exc}", flush=True)
-
-    return jsonify({"ok": True, "report_id": report_id})
+    return jsonify({"ok": True, "message": "processing"}), 202
 
 
 # ---------------------------------------------------------------------------
