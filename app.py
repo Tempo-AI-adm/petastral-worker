@@ -116,86 +116,87 @@ REGRAS OBRIGATÓRIAS:
 - Escreva TODO o conteúdo em português do Brasil
 - Use os nomes dos signos em português com acento (ex: Áries, Touro, Gêmeos, Câncer, Leão, Virgem, Libra, Escorpião, Sagitário, Capricórnio, Aquário, Peixes)
 - OBRIGATÓRIO: gerar exatamente 10 blocos ##CAPITULO_START## até ##CAPITULO_END##
-- Visão Astral: máximo 2 linhas por campo (personalidade, emocoes, energia, relacionamento)
+- Cada campo da Visão Astral: máximo 1 frase curta e direta (máximo 15 palavras)
+- Cada capítulo: máximo 120 palavras. Seja direto e objetivo. Prefira frases curtas. Não repita informações entre capítulos.
 - Não adicione texto fora dos delimitadores
 
 Responda EXATAMENTE neste formato:
 
 ##VISAO_ASTRAL_START##
-PERSONALIDADE: [máximo 2 linhas]
-EMOCOES: [máximo 2 linhas]
-ENERGIA: [máximo 2 linhas]
-RELACIONAMENTO: [máximo 2 linhas]
+PERSONALIDADE: [máximo 1 frase, 15 palavras]
+EMOCOES: [máximo 1 frase, 15 palavras]
+ENERGIA: [máximo 1 frase, 15 palavras]
+RELACIONAMENTO: [máximo 1 frase, 15 palavras]
 ##VISAO_ASTRAL_END##
 
 ##CAPITULO_START##
 NUMERO: 1
 TITULO: Sol em {signs['sun']}: Essência, Comportamento e Personalidade
 CONTEUDO:
-[mínimo 300 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
+[máximo 120 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
 ##CAPITULO_END##
 
 ##CAPITULO_START##
 NUMERO: 2
 TITULO: Lua em {signs['moon']}: Emoções, Necessidades e Vínculo com o Tutor
 CONTEUDO:
-[mínimo 300 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
+[máximo 120 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
 ##CAPITULO_END##
 
 ##CAPITULO_START##
 NUMERO: 3
 TITULO: Elementos Astrológicos: O Ambiente e a Energia Ideal
 CONTEUDO:
-[mínimo 300 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
+[máximo 120 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
 ##CAPITULO_END##
 
 ##CAPITULO_START##
 NUMERO: 4
 TITULO: Mercúrio em {signs['mercury']}: Como Seu Pet Se Comunica
 CONTEUDO:
-[mínimo 300 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
+[máximo 120 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
 ##CAPITULO_END##
 
 ##CAPITULO_START##
 NUMERO: 5
 TITULO: Vênus em {signs['venus']}: Relacionamentos e Conexões
 CONTEUDO:
-[mínimo 300 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
+[máximo 120 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
 ##CAPITULO_END##
 
 ##CAPITULO_START##
 NUMERO: 6
 TITULO: Marte em {signs['mars']}: Energia, Atividade e Comportamento
 CONTEUDO:
-[mínimo 300 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
+[máximo 120 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
 ##CAPITULO_END##
 
 ##CAPITULO_START##
 NUMERO: 7
 TITULO: Júpiter em {signs['jupiter']}: Sorte, Descobertas e Expansão
 CONTEUDO:
-[mínimo 300 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
+[máximo 120 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
 ##CAPITULO_END##
 
 ##CAPITULO_START##
 NUMERO: 8
 TITULO: Saturno em {signs['saturn']}: Desafios e Aprendizados
 CONTEUDO:
-[mínimo 300 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
+[máximo 120 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
 ##CAPITULO_END##
 
 ##CAPITULO_START##
 NUMERO: 9
 TITULO: Urano, Netuno e Plutão: Transformações e Propósito
 CONTEUDO:
-[mínimo 300 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
+[máximo 120 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
 ##CAPITULO_END##
 
 ##CAPITULO_START##
 NUMERO: 10
 TITULO: Pilar de Bem-Estar: Dicas Práticas
 CONTEUDO:
-[mínimo 200 palavras com dicas práticas. Use ### para subtítulos.]
+[máximo 120 palavras com dicas práticas. Use ### para subtítulos.]
 ##CAPITULO_END##"""
 
 
