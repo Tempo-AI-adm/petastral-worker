@@ -112,6 +112,12 @@ Vênus em {signs['venus']}, Marte em {signs['mars']}, Júpiter em {signs['jupite
 Saturno em {signs['saturn']}, Urano em {signs['uranus']}, Netuno em {signs['neptune']},
 Plutão em {signs['pluto']}, Elemento Predominante: {signs['dominant_element']}
 
+INSTRUÇÃO DE CONTEÚDO: Dentro do campo "conteudo" de cada capítulo, estruture o texto assim:
+- Primeiro parágrafo: introdução do tema (2-3 frases)
+- Subtópicos: use "### Título do Subtópico" seguido do texto
+- Dica Prática: termine sempre com "### Dica Prática" seguido da dica
+- Mínimo 300 palavras por capítulo
+
 INSTRUÇÃO CRÍTICA: Responda APENAS com um objeto JSON válido, sem texto antes ou depois, sem markdown, sem blocos de código. O JSON deve seguir exatamente esta estrutura:
 
 {{
