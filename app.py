@@ -183,6 +183,34 @@ INSTRUÇÃO CRÍTICA: Responda APENAS com um objeto JSON válido, sem texto ante
 }}"""
 
 
+def _sanitize_json_strings(text):
+    """Escape unescaped double quotes inside JSON string values."""
+    result = []
+    in_string = False
+    escape_next = False
+    for i, ch in enumerate(text):
+        if escape_next:
+            result.append(ch)
+            escape_next = False
+        elif ch == '\\':
+            result.append(ch)
+            escape_next = True
+        elif ch == '"' and in_string:
+            # Legitimate closing quote is followed by :, ,, }, ], whitespace or end
+            rest = text[i+1:i+3].lstrip()
+            if rest and rest[0] in (':', ',', '}', ']', '\n', '\r', ' '):
+                result.append(ch)
+                in_string = False
+            else:
+                result.append('\\"')  # escape internal quote
+        elif ch == '"' and not in_string:
+            result.append(ch)
+            in_string = True
+        else:
+            result.append(ch)
+    return ''.join(result)
+
+
 def _parse_gemini_response(raw_text):
     """Parse Gemini response: extract JSON v1 if present, otherwise return raw text."""
     raw = raw_text.strip()
@@ -191,6 +219,9 @@ def _parse_gemini_response(raw_text):
     if raw.startswith('```'):
         raw = re.sub(r'^```[a-z]*\n?', '', raw)
         raw = re.sub(r'\n?```$', '', raw)
+
+    # Sanitize unescaped quotes inside string values before parsing
+    raw = _sanitize_json_strings(raw)
 
     try:
         parsed = json.loads(raw)
