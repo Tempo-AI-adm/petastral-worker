@@ -264,6 +264,45 @@ def save_to_supabase(data, signs, report_text):
 
 
 # ---------------------------------------------------------------------------
+# pet_data mapper (sessionStorage → internal data dict)
+# ---------------------------------------------------------------------------
+
+def _map_pet_data(pet_data, email):
+    """Convert sessionStorage pet_data format to the internal data dict.
+
+    Required internal fields consumed by build_gemini_prompt / save_to_supabase:
+      pet_name, pet_type, breed, sex, pet_color, pet_markings,
+      city, country, year, month, day, hour, minute, hour_unknown,
+      owner_name, owner_email
+    """
+    current_year = datetime.now(timezone.utc).year
+
+    # "ano" is collected in the form's step 2 (month + year).
+    # Fall back to the current year if the field is absent.
+    year = pet_data.get("ano")
+    year = int(year) if year else current_year
+
+    return {
+        "pet_name":     pet_data.get("nome") or "",
+        "pet_type":     pet_data.get("tipo") or "",
+        "breed":        pet_data.get("raca") or "",
+        "sex":          pet_data.get("sexo") or "não informado",
+        "pet_color":    pet_data.get("cor"),
+        "pet_markings": pet_data.get("pelo"),
+        "city":         pet_data.get("cidade") or "",
+        "country":      "Brazil",
+        "year":         year,
+        "month":        int(pet_data.get("mes") or 1),
+        "day":          int(pet_data.get("dia") or 1),
+        "hour":         12,
+        "minute":       0,
+        "hour_unknown": True,
+        "owner_name":   "",
+        "owner_email":  email,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
 
@@ -366,6 +405,87 @@ def process_job():
     })
 
     return jsonify({"job_id": job_id, "status": "completed", **output})
+
+
+@app.route("/generate", methods=["POST", "OPTIONS"])
+def generate():
+    # CORS preflight
+    if request.method == "OPTIONS":
+        resp = jsonify({})
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        resp.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return resp, 204
+
+    body = request.get_json(silent=True) or {}
+    payment_id = body.get("payment_id")
+    pet_data   = body.get("pet_data") or {}
+    email      = body.get("email") or pet_data.get("email")
+
+    if not payment_id:
+        return jsonify({"error": "Missing payment_id"}), 400
+    if not pet_data:
+        return jsonify({"error": "Missing pet_data"}), 400
+    if not email:
+        return jsonify({"error": "Missing email"}), 400
+
+    # 1. Map sessionStorage → internal data dict
+    data = _map_pet_data(pet_data, email)
+
+    # 2. Astro calculation (geocoding → ephemeris → signs)
+    try:
+        raw_signs = astro_calculator.calculate(
+            city=data["city"],
+            country=data["country"],
+            year=data["year"],
+            month=data["month"],
+            day=data["day"],
+            hour=data["hour"],
+            minute=data["minute"],
+        )
+    except Exception as exc:
+        return jsonify({"error": f"Astro calculation failed: {exc}"}), 422
+
+    signs = {
+        "sun":              raw_signs["sun_sign"],
+        "moon":             raw_signs["moon_sign"],
+        "mercury":          raw_signs["mercury_sign"],
+        "venus":            raw_signs["venus_sign"],
+        "mars":             raw_signs["mars_sign"],
+        "jupiter":          raw_signs["jupiter_sign"],
+        "saturn":           raw_signs["saturn_sign"],
+        "uranus":           raw_signs["uranus_sign"],
+        "neptune":          raw_signs["neptune_sign"],
+        "pluto":            raw_signs["pluto_sign"],
+        "dominant_element": raw_signs["dominant_element"],
+    }
+
+    # 3. Gemini report generation
+    try:
+        report_text = call_gemini(build_gemini_prompt(data, signs))
+    except Exception as exc:
+        return jsonify({"error": f"Gemini error: {exc}"}), 502
+
+    # 4. Save owners → pets → reports
+    try:
+        report_id, _pet_id = save_to_supabase(data, signs, report_text)
+    except Exception as exc:
+        return jsonify({"error": f"Supabase save error: {exc}"}), 502
+
+    # 5. Link report back to the payment row
+    try:
+        patch_resp = requests.patch(
+            _sb_url(f"/rest/v1/payments?id=eq.{payment_id}"),
+            headers=_sb_headers(),
+            json={"report_id": report_id},
+            timeout=10,
+        )
+        patch_resp.raise_for_status()
+    except Exception as exc:
+        # Report is already saved — log but do not fail the request
+        print(f"[generate] WARNING: payment patch failed for {payment_id}: {exc}", flush=True)
+
+    return jsonify({"ok": True, "report_id": report_id})
 
 
 # ---------------------------------------------------------------------------
