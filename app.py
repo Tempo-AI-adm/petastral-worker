@@ -112,125 +112,122 @@ Vênus em {signs['venus']}, Marte em {signs['mars']}, Júpiter em {signs['jupite
 Saturno em {signs['saturn']}, Urano em {signs['uranus']}, Netuno em {signs['neptune']},
 Plutão em {signs['pluto']}, Elemento Predominante: {signs['dominant_element']}
 
-INSTRUÇÃO DE CONTEÚDO: Dentro do campo "conteudo" de cada capítulo, estruture o texto assim:
-- Primeiro parágrafo: introdução do tema (2-3 frases)
-- Subtópicos: use "### Título do Subtópico" seguido do texto
-- Dica Prática: termine sempre com "### Dica Prática" seguido da dica
-- Mínimo 300 palavras por capítulo
+Responda EXATAMENTE neste formato com os delimitadores abaixo. Não use JSON. Não adicione texto fora dos delimitadores.
 
-INSTRUÇÃO CRÍTICA: Responda APENAS com um objeto JSON válido, sem texto antes ou depois, sem markdown, sem blocos de código. O JSON deve seguir exatamente esta estrutura:
+##VISAO_ASTRAL_START##
+PERSONALIDADE: [texto aqui]
+EMOCOES: [texto aqui]
+ENERGIA: [texto aqui]
+RELACIONAMENTO: [texto aqui]
+##VISAO_ASTRAL_END##
 
-{{
-  "schema_version": "v1",
-  "visao_astral": {{
-    "personalidade": "frase descritiva",
-    "emocoes": "frase descritiva",
-    "energia": "frase descritiva",
-    "relacionamento": "frase descritiva"
-  }},
-  "capitulos": [
-    {{
-      "numero": 1,
-      "titulo": "Sol em {signs['sun']}: Essência, Comportamento e Personalidade",
-      "conteudo": "mínimo 300 palavras sobre este tema"
-    }},
-    {{
-      "numero": 2,
-      "titulo": "Lua em {signs['moon']}: Emoções, Necessidades e Vínculo com o Tutor",
-      "conteudo": "mínimo 300 palavras"
-    }},
-    {{
-      "numero": 3,
-      "titulo": "Elementos Astrológicos: O Ambiente e a Energia Ideal",
-      "conteudo": "mínimo 300 palavras"
-    }},
-    {{
-      "numero": 4,
-      "titulo": "Mercúrio em {signs['mercury']}: Como Seu Pet Se Comunica",
-      "conteudo": "mínimo 300 palavras"
-    }},
-    {{
-      "numero": 5,
-      "titulo": "Vênus em {signs['venus']}: Relacionamentos e Conexões",
-      "conteudo": "mínimo 300 palavras"
-    }},
-    {{
-      "numero": 6,
-      "titulo": "Marte em {signs['mars']}: Energia, Atividade e Comportamento",
-      "conteudo": "mínimo 300 palavras"
-    }},
-    {{
-      "numero": 7,
-      "titulo": "Júpiter em {signs['jupiter']}: Sorte, Descobertas e Expansão",
-      "conteudo": "mínimo 300 palavras"
-    }},
-    {{
-      "numero": 8,
-      "titulo": "Saturno em {signs['saturn']}: Desafios e Aprendizados",
-      "conteudo": "mínimo 300 palavras"
-    }},
-    {{
-      "numero": 9,
-      "titulo": "Urano, Netuno e Plutão: Transformações e Propósito",
-      "conteudo": "mínimo 300 palavras"
-    }},
-    {{
-      "numero": 10,
-      "titulo": "Pilar de Bem-Estar: Dicas Práticas",
-      "conteudo": "mínimo 200 palavras com dicas práticas"
-    }}
-  ]
-}}"""
+##CAPITULO_START##
+NUMERO: 1
+TITULO: Sol em {signs['sun']}: Essência, Comportamento e Personalidade
+CONTEUDO:
+[mínimo 300 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
+##CAPITULO_END##
 
+##CAPITULO_START##
+NUMERO: 2
+TITULO: Lua em {signs['moon']}: Emoções, Necessidades e Vínculo com o Tutor
+CONTEUDO:
+[mínimo 300 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
+##CAPITULO_END##
 
-def _sanitize_json_strings(text):
-    """Escape unescaped double quotes inside JSON string values."""
-    result = []
-    in_string = False
-    escape_next = False
-    for i, ch in enumerate(text):
-        if escape_next:
-            result.append(ch)
-            escape_next = False
-        elif ch == '\\':
-            result.append(ch)
-            escape_next = True
-        elif ch == '"' and in_string:
-            # Legitimate closing quote is followed by :, ,, }, ], whitespace or end
-            rest = text[i+1:i+3].lstrip()
-            if rest and rest[0] in (':', ',', '}', ']', '\n', '\r', ' '):
-                result.append(ch)
-                in_string = False
-            else:
-                result.append('\\"')  # escape internal quote
-        elif ch == '"' and not in_string:
-            result.append(ch)
-            in_string = True
-        else:
-            result.append(ch)
-    return ''.join(result)
+##CAPITULO_START##
+NUMERO: 3
+TITULO: Elementos Astrológicos: O Ambiente e a Energia Ideal
+CONTEUDO:
+[mínimo 300 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
+##CAPITULO_END##
+
+##CAPITULO_START##
+NUMERO: 4
+TITULO: Mercúrio em {signs['mercury']}: Como Seu Pet Se Comunica
+CONTEUDO:
+[mínimo 300 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
+##CAPITULO_END##
+
+##CAPITULO_START##
+NUMERO: 5
+TITULO: Vênus em {signs['venus']}: Relacionamentos e Conexões
+CONTEUDO:
+[mínimo 300 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
+##CAPITULO_END##
+
+##CAPITULO_START##
+NUMERO: 6
+TITULO: Marte em {signs['mars']}: Energia, Atividade e Comportamento
+CONTEUDO:
+[mínimo 300 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
+##CAPITULO_END##
+
+##CAPITULO_START##
+NUMERO: 7
+TITULO: Júpiter em {signs['jupiter']}: Sorte, Descobertas e Expansão
+CONTEUDO:
+[mínimo 300 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
+##CAPITULO_END##
+
+##CAPITULO_START##
+NUMERO: 8
+TITULO: Saturno em {signs['saturn']}: Desafios e Aprendizados
+CONTEUDO:
+[mínimo 300 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
+##CAPITULO_END##
+
+##CAPITULO_START##
+NUMERO: 9
+TITULO: Urano, Netuno e Plutão: Transformações e Propósito
+CONTEUDO:
+[mínimo 300 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
+##CAPITULO_END##
+
+##CAPITULO_START##
+NUMERO: 10
+TITULO: Pilar de Bem-Estar: Dicas Práticas
+CONTEUDO:
+[mínimo 200 palavras com dicas práticas. Use ### para subtítulos.]
+##CAPITULO_END##"""
 
 
 def _parse_gemini_response(raw_text):
-    """Parse Gemini response: extract JSON v1 if present, otherwise return raw text."""
+    """Parse custom-delimited Gemini response into JSON v1. Falls back to raw text."""
     raw = raw_text.strip()
 
-    # Remove possible markdown code block wrapper
-    if raw.startswith('```'):
-        raw = re.sub(r'^```[a-z]*\n?', '', raw)
-        raw = re.sub(r'\n?```$', '', raw)
-
-    # Sanitize unescaped quotes inside string values before parsing
-    raw = _sanitize_json_strings(raw)
-
     try:
-        parsed = json.loads(raw)
-        if parsed.get('schema_version') == 'v1' and 'capitulos' in parsed:
-            return json.dumps(parsed, ensure_ascii=False)
-        else:
-            return raw  # fallback: JSON mas sem schema esperado
-    except (json.JSONDecodeError, ValueError):
-        return raw  # fallback: texto bruto
+        result = {'schema_version': 'v1', 'visao_astral': {}, 'capitulos': []}
+
+        # Extract visao_astral block
+        va_match = re.search(r'##VISAO_ASTRAL_START##(.*?)##VISAO_ASTRAL_END##', raw, re.DOTALL)
+        if va_match:
+            va_text = va_match.group(1).strip()
+            for field in ['PERSONALIDADE', 'EMOCOES', 'ENERGIA', 'RELACIONAMENTO']:
+                field_match = re.search(rf'{field}: (.+?)(?=\n[A-Z]+:|$)', va_text, re.DOTALL)
+                if field_match:
+                    result['visao_astral'][field.lower()] = field_match.group(1).strip()
+
+        # Extract capitulo blocks
+        cap_matches = re.findall(r'##CAPITULO_START##(.*?)##CAPITULO_END##', raw, re.DOTALL)
+        for cap in cap_matches:
+            numero_match = re.search(r'NUMERO: (\d+)', cap)
+            titulo_match = re.search(r'TITULO: (.+)', cap)
+            conteudo_match = re.search(r'CONTEUDO:\n(.*)', cap, re.DOTALL)
+            if numero_match and titulo_match and conteudo_match:
+                result['capitulos'].append({
+                    'numero': int(numero_match.group(1)),
+                    'titulo': titulo_match.group(1).strip(),
+                    'conteudo': conteudo_match.group(1).strip(),
+                })
+
+        if result['capitulos']:
+            return json.dumps(result, ensure_ascii=False)
+    except Exception as exc:
+        print(f'[parse] erro no parser customizado: {exc}', flush=True)
+
+    # Fallback: return raw text
+    return raw_text
 
 
 def _call_gemini_model(prompt, model, api_key):
