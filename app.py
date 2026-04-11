@@ -112,13 +112,20 @@ Vênus em {signs['venus']}, Marte em {signs['mars']}, Júpiter em {signs['jupite
 Saturno em {signs['saturn']}, Urano em {signs['uranus']}, Netuno em {signs['neptune']},
 Plutão em {signs['pluto']}, Elemento Predominante: {signs['dominant_element']}
 
-Responda EXATAMENTE neste formato com os delimitadores abaixo. Não use JSON. Não adicione texto fora dos delimitadores.
+REGRAS OBRIGATÓRIAS:
+- Escreva TODO o conteúdo em português do Brasil
+- Use os nomes dos signos em português com acento (ex: Áries, Touro, Gêmeos, Câncer, Leão, Virgem, Libra, Escorpião, Sagitário, Capricórnio, Aquário, Peixes)
+- OBRIGATÓRIO: gerar exatamente 10 blocos ##CAPITULO_START## até ##CAPITULO_END##
+- Visão Astral: máximo 2 linhas por campo (personalidade, emocoes, energia, relacionamento)
+- Não adicione texto fora dos delimitadores
+
+Responda EXATAMENTE neste formato:
 
 ##VISAO_ASTRAL_START##
-PERSONALIDADE: [texto aqui]
-EMOCOES: [texto aqui]
-ENERGIA: [texto aqui]
-RELACIONAMENTO: [texto aqui]
+PERSONALIDADE: [máximo 2 linhas]
+EMOCOES: [máximo 2 linhas]
+ENERGIA: [máximo 2 linhas]
+RELACIONAMENTO: [máximo 2 linhas]
 ##VISAO_ASTRAL_END##
 
 ##CAPITULO_START##
@@ -221,6 +228,7 @@ def _parse_gemini_response(raw_text):
                     'conteudo': conteudo_match.group(1).strip(),
                 })
 
+        print(f'[parse] capítulos encontrados: {len(result["capitulos"])}', flush=True)
         if result['capitulos']:
             return json.dumps(result, ensure_ascii=False)
     except Exception as exc:
