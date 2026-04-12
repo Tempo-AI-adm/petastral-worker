@@ -4,10 +4,12 @@ Processes pending jobs: geocoding → ephemeris → Gemini → save to Supabase.
 """
 
 import json
+import json as json_lib
 import os
 import re
 import threading
 import time
+import urllib.request
 from datetime import datetime, timezone
 
 import requests
@@ -506,6 +508,25 @@ def process_job():
     return jsonify({"job_id": job_id, "status": "completed", **output})
 
 
+def _send_email(base_url, email, pet_nome, report_id):
+    try:
+        payload = json_lib.dumps({
+            'email': email,
+            'pet_nome': pet_nome,
+            'report_id': report_id
+        }).encode('utf-8')
+        req = urllib.request.Request(
+            f'{base_url}/api/payment/email',
+            data=payload,
+            headers={'Content-Type': 'application/json'},
+            method='POST'
+        )
+        urllib.request.urlopen(req, timeout=10)
+        print(f'[email] enviado para {email}')
+    except Exception as e:
+        print(f'[email] erro ao enviar: {e}')
+
+
 def _process_generate(payment_id, pet_data, email):
     try:
         # 1. Map sessionStorage → internal data dict
@@ -552,6 +573,9 @@ def _process_generate(payment_id, pet_data, email):
             patch_resp.raise_for_status()
         except Exception as exc:
             print(f"[generate] WARNING: payment patch failed for {payment_id}: {exc}", flush=True)
+
+        base_url = os.environ.get('FRONTEND_URL', 'https://petastral-signos.vercel.app')
+        _send_email(base_url, email, data.get('pet_name', ''), report_id)
 
         print(f"[generate] done — payment_id={payment_id} report_id={report_id}", flush=True)
 
