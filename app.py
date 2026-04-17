@@ -352,20 +352,20 @@ def call_gemini(prompt):
     try:
         result = _call_gemini_model(prompt, primary_model, GEMINI_BASE_URL, api_key)
         print(f"[Gemini] success with primary model: {primary_model}", flush=True)
-        return result
+        return result, primary_model
     except RuntimeError as primary_exc:
         print(f"[Gemini] primary model failed: {primary_exc}. Trying fallback {fallback_model}", flush=True)
 
     result = _call_gemini_model(prompt, fallback_model, fallback_url, api_key)
     print(f"[Gemini] success with fallback model: {fallback_model}", flush=True)
-    return result
+    return result, fallback_model
 
 
 # ---------------------------------------------------------------------------
 # Save to Supabase (owners → pets → reports)
 # ---------------------------------------------------------------------------
 
-def save_to_supabase(data, signs, report_text):
+def save_to_supabase(data, signs, report_text, model_used=None):
     headers = _sb_headers()
 
     # 1. Upsert owner (on conflict email, just return existing)
@@ -441,6 +441,7 @@ def save_to_supabase(data, signs, report_text):
             "pet_id":      pet_id,
             "signs":       signs,
             "report_text": report_text,
+            "model_used":  model_used or "unknown",
             "created_at":  _now_iso(),
         },
         timeout=15,
@@ -570,14 +571,15 @@ def process_job():
 
     # 4. Gemini report generation
     try:
-        report_text = _parse_gemini_response(call_gemini(build_gemini_prompt(data, signs)))
+        report_text_raw, model_used = call_gemini(build_gemini_prompt(data, signs))
+        report_text = _parse_gemini_response(report_text_raw)
     except Exception as exc:
         fail_job(job_id, f"Gemini failed: {exc}")
         return jsonify({"error": f"Gemini error: {exc}"}), 502
 
     # 5. Save to owners/pets/reports
     try:
-        report_id, pet_id = save_to_supabase(data, signs, report_text)
+        report_id, pet_id = save_to_supabase(data, signs, report_text, model_used=model_used)
     except Exception as exc:
         fail_job(job_id, f"Save failed: {exc}")
         return jsonify({"error": f"Supabase save error: {exc}"}), 502
@@ -648,17 +650,18 @@ def _process_generate(payment_id, pet_data, email):
         signs["dominant_element"] = ELEMENTOS_PT.get(signs["dominant_element"], signs["dominant_element"])
 
         # 3. Gemini report generation
-        report_text = _parse_gemini_response(call_gemini(build_gemini_prompt(data, signs)))
+        report_text_raw, model_used = call_gemini(build_gemini_prompt(data, signs))
+        report_text = _parse_gemini_response(report_text_raw)
 
         # 4. Save owners → pets → reports
-        report_id, _pet_id = save_to_supabase(data, signs, report_text)
+        report_id, _pet_id = save_to_supabase(data, signs, report_text, model_used=model_used)
 
         # 5. Link report back to the payment row
         try:
             patch_resp = requests.patch(
                 _sb_url(f"/rest/v1/payments?id=eq.{payment_id}"),
                 headers=_sb_headers(),
-                json={"report_id": report_id},
+                json={"report_id": report_id, "laudo_status": "success"},
                 timeout=10,
             )
             patch_resp.raise_for_status()
@@ -676,7 +679,7 @@ def _process_generate(payment_id, pet_data, email):
             requests.patch(
                 _sb_url(f"/rest/v1/payments?id=eq.{payment_id}"),
                 headers={**_sb_headers(), "Prefer": "return=minimal"},
-                json={"status": "failed"},
+                json={"laudo_status": "failed", "status": "failed"},
                 timeout=10,
             )
         except Exception:
