@@ -321,32 +321,37 @@ def save_to_supabase(data, signs, report_text):
     utm_medium   = data.get('utmMedium', '')
     utm_campaign = data.get('utmCampaign', '')
     referrer     = data.get('referrer', '')
-    owner_resp = requests.post(
-        _sb_url("/rest/v1/owners"),
-        headers={**headers, "Prefer": "resolution=ignore-duplicates,return=representation"},
-        json={
-            "name":         data["owner_name"],
-            "email":        data["owner_email"],
-            "utm_source":   utm_source,
-            "utm_medium":   utm_medium,
-            "utm_campaign": utm_campaign,
-            "referrer":     referrer,
-        },
-        timeout=15,
-    )
-    owner_resp.raise_for_status()
-    owner_data = owner_resp.json()
-    if owner_data:
-        owner_id = owner_data[0]["id"]
-    else:
+    try:
+        owner_resp = requests.post(
+            _sb_url("/rest/v1/owners"),
+            headers={**headers, "Prefer": "resolution=merge-duplicates,return=representation"},
+            json={
+                "name":         data["owner_name"],
+                "email":        data["owner_email"],
+                "utm_source":   utm_source,
+                "utm_medium":   utm_medium,
+                "utm_campaign": utm_campaign,
+                "referrer":     referrer,
+            },
+            timeout=15,
+        )
+        if owner_resp.status_code in (200, 201) and owner_resp.json():
+            owner_id = owner_resp.json()[0]["id"]
+        else:
+            raise ValueError("empty response")
+    except Exception:
+        # fallback: busca owner existente pelo email
         fallback = requests.get(
             _sb_url("/rest/v1/owners"),
-            headers=_sb_headers(),
+            headers=headers,
             params={"email": f"eq.{data['owner_email']}", "select": "id"},
-            timeout=10,
+            timeout=15,
         )
         fallback.raise_for_status()
-        owner_id = fallback.json()[0]["id"]
+        rows = fallback.json()
+        if not rows:
+            raise RuntimeError(f"Owner not found and insert failed for {data['owner_email']}")
+        owner_id = rows[0]["id"]
 
     # 2. Insert pet (includes owner_email for RLS read access later)
     birth_data = {
