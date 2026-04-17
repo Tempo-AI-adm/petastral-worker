@@ -234,16 +234,16 @@ def _parse_gemini_response(raw_text):
         if va_match:
             va_text = va_match.group(1).strip()
             for field in ['PERSONALIDADE', 'EMOCOES', 'ENERGIA', 'RELACIONAMENTO']:
-                field_match = re.search(rf'{field}: (.+?)(?=\n[A-Z]+:|$)', va_text, re.DOTALL)
+                field_match = re.search(rf'{field}:\s*(.+?)(?=\s(?:EMOCOES|ENERGIA|RELACIONAMENTO|PERSONALIDADE):|##VISAO_ASTRAL_END##|$)', va_text, re.DOTALL)
                 if field_match:
                     result['visao_astral'][field.lower()] = field_match.group(1).strip()
 
         # Extract capitulo blocks
         cap_matches = re.findall(r'##CAPITULO_START##(.*?)##CAPITULO_END##', raw, re.DOTALL)
         for cap in cap_matches:
-            numero_match = re.search(r'NUMERO: (\d+)', cap)
-            titulo_match = re.search(r'TITULO: (.+)', cap)
-            conteudo_match = re.search(r'CONTEUDO:\n(.*)', cap, re.DOTALL)
+            numero_match   = re.search(r'NUMERO:\s*(\d+)', cap)
+            titulo_match   = re.search(r'TITULO:\s*(.+?)(?=\nCONTEUDO:|CONTEUDO:)', cap, re.DOTALL)
+            conteudo_match = re.search(r'CONTEUDO:\s*(.*)', cap, re.DOTALL)
             if numero_match and titulo_match and conteudo_match:
                 result['capitulos'].append({
                     'numero': int(numero_match.group(1)),
