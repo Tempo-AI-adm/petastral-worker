@@ -264,7 +264,7 @@ def _parse_gemini_response(raw_text):
 def _call_gemini_model(prompt, model, api_key):
     """Try one model with 3 attempts (5s/10s/20s backoff). Returns text or raises."""
     url = f"{GEMINI_BASE_URL}{model}:generateContent"
-    delays = [5, 10, 20]
+    delays = [10, 20, 40]
     for attempt, delay in enumerate(delays, start=1):
         print(f"[Gemini] model={model} attempt {attempt}/3 -> {url}", flush=True)
         try:
@@ -310,7 +310,7 @@ def call_gemini(prompt):
         raise RuntimeError("GEMINI_API_KEY not set")
 
     primary_model = "gemini-2.5-flash"
-    fallback_model = "gemini-2.0-flash"
+    fallback_model = "gemini-2.0-flash-lite"
 
     try:
         result = _call_gemini_model(prompt, primary_model, api_key)
