@@ -299,14 +299,18 @@ def call_gemini(prompt):
         raise RuntimeError("GEMINI_API_KEY not set")
 
     primary_model = "gemini-2.5-flash"
-    fallback_model = "gemini-2.5-flash-lite"
+    fallback_model = "gemini-2.0-flash"
 
     try:
-        return _call_gemini_model(prompt, primary_model, api_key)
+        result = _call_gemini_model(prompt, primary_model, api_key)
+        print(f"[Gemini] success with primary model: {primary_model}", flush=True)
+        return result
     except RuntimeError as primary_exc:
         print(f"[Gemini] primary model failed: {primary_exc}. Trying fallback {fallback_model}", flush=True)
 
-    return _call_gemini_model(prompt, fallback_model, api_key)
+    result = _call_gemini_model(prompt, fallback_model, api_key)
+    print(f"[Gemini] success with fallback model: {fallback_model}", flush=True)
+    return result
 
 
 # ---------------------------------------------------------------------------
