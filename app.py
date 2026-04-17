@@ -672,6 +672,15 @@ def _process_generate(payment_id, pet_data, email):
 
     except Exception as exc:
         print(f"[generate] ERROR background processing for payment_id={payment_id}: {exc}", flush=True)
+        try:
+            requests.patch(
+                _sb_url(f"/rest/v1/payments?id=eq.{payment_id}"),
+                headers={**_sb_headers(), "Prefer": "return=minimal"},
+                json={"status": "failed"},
+                timeout=10,
+            )
+        except Exception:
+            pass
 
 
 @app.route("/generate", methods=["POST", "OPTIONS"])
