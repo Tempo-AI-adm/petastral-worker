@@ -261,9 +261,9 @@ def _parse_gemini_response(raw_text):
     return raw_text
 
 
-def _call_gemini_model(prompt, model, api_key):
-    """Try one model with 3 attempts (5s/10s/20s backoff). Returns text or raises."""
-    url = f"{GEMINI_BASE_URL}{model}:generateContent"
+def _call_gemini_model(prompt, model, base_url, api_key):
+    """Try one model with 3 attempts (10s/20s/40s backoff). Returns text or raises."""
+    url = f"{base_url}{model}:generateContent"
     delays = [10, 20, 40]
     for attempt, delay in enumerate(delays, start=1):
         print(f"[Gemini] model={model} attempt {attempt}/3 -> {url}", flush=True)
@@ -309,17 +309,18 @@ def call_gemini(prompt):
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY not set")
 
-    primary_model = "gemini-2.5-flash"
-    fallback_model = "gemini-2.0-flash-lite"
+    primary_model  = "gemini-2.5-flash"
+    fallback_model = "gemini-2.0-flash"
+    fallback_url   = "https://generativelanguage.googleapis.com/v1/models/"
 
     try:
-        result = _call_gemini_model(prompt, primary_model, api_key)
+        result = _call_gemini_model(prompt, primary_model, GEMINI_BASE_URL, api_key)
         print(f"[Gemini] success with primary model: {primary_model}", flush=True)
         return result
     except RuntimeError as primary_exc:
         print(f"[Gemini] primary model failed: {primary_exc}. Trying fallback {fallback_model}", flush=True)
 
-    result = _call_gemini_model(prompt, fallback_model, api_key)
+    result = _call_gemini_model(prompt, fallback_model, fallback_url, api_key)
     print(f"[Gemini] success with fallback model: {fallback_model}", flush=True)
     return result
 
