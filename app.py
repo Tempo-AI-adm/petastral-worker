@@ -243,10 +243,12 @@ def _parse_gemini_response(raw_text):
             titulo_match   = re.search(r'TITULO:\s*(.+?)(?=\nCONTEUDO:|CONTEUDO:)', cap, re.DOTALL)
             conteudo_match = re.search(r'CONTEUDO:\s*(.*)', cap, re.DOTALL)
             if numero_match and titulo_match and conteudo_match:
+                conteudo = conteudo_match.group(1).strip()
+                conteudo = re.sub(r'(###\s*Dica Prática\s*\n+)Dica Prática\s*', r'\1', conteudo, flags=re.IGNORECASE)
                 result['capitulos'].append({
                     'numero': int(numero_match.group(1)),
                     'titulo': titulo_match.group(1).strip(),
-                    'conteudo': conteudo_match.group(1).strip(),
+                    'conteudo': conteudo,
                 })
 
         print(f'[parse] capítulos encontrados: {len(result["capitulos"])}', flush=True)
@@ -307,7 +309,7 @@ def call_gemini(prompt):
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY not set")
 
-    primary_model  = "gemini-2.0-flash"
+    primary_model  = "gemini-2.5-flash"
     fallback_model = "gemini-2.5-flash-lite"
     fallback_url   = GEMINI_BASE_URL
 
