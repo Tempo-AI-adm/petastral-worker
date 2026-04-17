@@ -33,8 +33,7 @@ Regras obrigatórias:
 - Escreva sempre em português do Brasil
 - Use o nome do pet ao longo do texto (não "seu pet" genérico)
 - Cada capítulo mínimo 300 palavras com exemplos práticos reais
-- A Dica Prática deve ser uma instrução concreta e acionável, não uma frase genérica
-- NÃO escreva "Dica Prática" como prefixo dentro do texto da dica — o label já aparece separado
+- Ao final de cada capítulo, escreva exatamente '### Dica Prática' em uma linha separada, seguido da dica em novo parágrafo. NUNCA repita as palavras 'Dica Prática' dentro do texto da dica em si.
 - Evite previsões absolutas — use "tende a", "costuma", "pode demonstrar"
 - Quando a raça for informada (não SRD), incorpore características comportamentais conhecidas dessa raça
 - Quando for gato SRD, use a pelagem/cor como lente comportamental"""
@@ -218,8 +217,7 @@ Capítulos a gerar:
 6. Marte em {signs['mars']}: Energia, Atividade e Comportamento
 7. Júpiter em {signs['jupiter']}: Sorte, Descobertas e Expansão
 8. Saturno em {signs['saturn']}: Desafios e Aprendizados
-9. Urano, Netuno e Plutão: Transformações e Propósito
-10. PILAR DE BEM-ESTAR: Dicas Práticas (4 subtópicos: Rotina, Estímulo Mental, Conexão Afetiva, Atividade Física)"""
+9. Urano, Netuno e Plutão: Transformações e Propósito"""
 
 
 def _parse_gemini_response(raw_text):
@@ -310,7 +308,7 @@ def call_gemini(prompt):
         raise RuntimeError("GEMINI_API_KEY not set")
 
     primary_model  = "gemini-2.0-flash"
-    fallback_model = "gemini-2.5-flash"
+    fallback_model = "gemini-2.5-flash-lite"
     fallback_url   = GEMINI_BASE_URL
 
     try:
