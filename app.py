@@ -192,82 +192,34 @@ DADOS ASTRAIS CALCULADOS:
 
 TAREFA: GERE O GUIA SIGNOPET COMPLETO
 
+FORMATO DE SAÍDA OBRIGATÓRIO — siga exatamente esta estrutura, preenchendo o conteúdo entre os marcadores:
+
 ##VISAO_ASTRAL_START##
-PERSONALIDADE: [frase direta citando {pet_name} — máximo 15 palavras]
-EMOCOES: [frase direta citando {pet_name} — máximo 15 palavras]
-ENERGIA: [frase direta citando {pet_name} — máximo 15 palavras]
-RELACIONAMENTO: [frase direta citando {pet_name} — máximo 15 palavras]
+PERSONALIDADE: [escreva aqui uma frase direta sobre personalidade citando {pet_name}]
+EMOCOES: [escreva aqui uma frase sobre emoções citando {pet_name}]
+ENERGIA: [escreva aqui uma frase sobre energia citando {pet_name}]
+RELACIONAMENTO: [escreva aqui uma frase sobre relacionamento citando {pet_name}]
 ##VISAO_ASTRAL_END##
 
+Para cada capítulo abaixo, use exatamente este bloco:
 ##CAPITULO_START##
-NUMERO: 1
-TITULO: Sol em {signs['sun']}: Essência, Comportamento e Personalidade
+NUMERO: [número]
+TITULO: [título]
 CONTEUDO:
-[mínimo 300 palavras, exemplos concretos do dia a dia de {pet_name}, termine com ### Dica Prática seguido da dica sem repetir o prefixo]
+[mínimo 300 palavras em português, exemplos do dia a dia, termine com ### Dica Prática seguido da dica sem repetir o prefixo no texto]
 ##CAPITULO_END##
 
-##CAPITULO_START##
-NUMERO: 2
-TITULO: Lua em {signs['moon']}: Emoções, Necessidades e Vínculo com o Tutor
-CONTEUDO:
-[mínimo 300 palavras, exemplos concretos, termine com ### Dica Prática]
-##CAPITULO_END##
-
-##CAPITULO_START##
-NUMERO: 3
-TITULO: Elementos Astrológicos: O Ambiente e a Energia Ideal
-CONTEUDO:
-[mínimo 300 palavras, exemplos concretos, termine com ### Dica Prática]
-##CAPITULO_END##
-
-##CAPITULO_START##
-NUMERO: 4
-TITULO: Mercúrio em {signs['mercury']}: Como {pet_name} Se Comunica
-CONTEUDO:
-[mínimo 300 palavras, exemplos concretos, termine com ### Dica Prática]
-##CAPITULO_END##
-
-##CAPITULO_START##
-NUMERO: 5
-TITULO: Vênus em {signs['venus']}: Relacionamentos e Conexões
-CONTEUDO:
-[mínimo 300 palavras, exemplos concretos, termine com ### Dica Prática]
-##CAPITULO_END##
-
-##CAPITULO_START##
-NUMERO: 6
-TITULO: Marte em {signs['mars']}: Energia, Atividade e Comportamento
-CONTEUDO:
-[mínimo 300 palavras, exemplos concretos, termine com ### Dica Prática]
-##CAPITULO_END##
-
-##CAPITULO_START##
-NUMERO: 7
-TITULO: Júpiter em {signs['jupiter']}: Sorte, Descobertas e Expansão
-CONTEUDO:
-[mínimo 300 palavras, exemplos concretos, termine com ### Dica Prática]
-##CAPITULO_END##
-
-##CAPITULO_START##
-NUMERO: 8
-TITULO: Saturno em {signs['saturn']}: Desafios e Aprendizados
-CONTEUDO:
-[mínimo 300 palavras, exemplos concretos, termine com ### Dica Prática]
-##CAPITULO_END##
-
-##CAPITULO_START##
-NUMERO: 9
-TITULO: Urano, Netuno e Plutão: Transformações e Propósito
-CONTEUDO:
-[mínimo 300 palavras, exemplos concretos, termine com ### Dica Prática]
-##CAPITULO_END##
-
-##CAPITULO_START##
-NUMERO: 10
-TITULO: Pilar de Bem-Estar: Dicas Práticas
-CONTEUDO:
-[4 subtópicos concretos: Rotina, Estímulo Mental, Conexão Afetiva, Atividade Física]
-##CAPITULO_END##"""
+Capítulos a gerar:
+1. Sol em {signs['sun']}: Essência, Comportamento e Personalidade
+2. Lua em {signs['moon']}: Emoções, Necessidades e Vínculo com o Tutor
+3. Elementos Astrológicos: O Ambiente e a Energia Ideal
+4. Mercúrio em {signs['mercury']}: Como {pet_name} Se Comunica
+5. Vênus em {signs['venus']}: Relacionamentos e Conexões
+6. Marte em {signs['mars']}: Energia, Atividade e Comportamento
+7. Júpiter em {signs['jupiter']}: Sorte, Descobertas e Expansão
+8. Saturno em {signs['saturn']}: Desafios e Aprendizados
+9. Urano, Netuno e Plutão: Transformações e Propósito
+10. PILAR DE BEM-ESTAR: Dicas Práticas (4 subtópicos: Rotina, Estímulo Mental, Conexão Afetiva, Atividade Física)"""
 
 
 def _parse_gemini_response(raw_text):
