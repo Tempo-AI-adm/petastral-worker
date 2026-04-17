@@ -5,6 +5,7 @@ returns planetary zodiac signs and dominant element.
 
 import json
 import sys
+import time
 from datetime import datetime, timezone
 
 import requests
@@ -45,19 +46,7 @@ EPHEMERIS_BASE = "https://ephemeris.fyi/ephemeris"
 # Helpers
 # ---------------------------------------------------------------------------
 
-def geocode(city, country):
-    """Return (latitude, longitude) for the given city and country."""
-    geolocator = Nominatim(user_agent="petastral-calculator/1.0")
-    query = f"{city}, {country}"
-    try:
-        location = geolocator.geocode(query, timeout=10)
-    except (GeocoderTimedOut, GeocoderServiceError) as exc:
-        raise RuntimeError(f"Geocoding failed: {exc}") from exc
-
-    if location is None:
-        raise ValueError(f"Could not find coordinates for '{query}'")
-
-    return location.latitude, location.longitude
+DEFAULT_LAT, DEFAULT_LON = -23.5505, -46.6333  # São Paulo, Brasil
 
 
 def longitude_to_sign(degrees):
@@ -117,8 +106,20 @@ def fetch_positions(lat, lon, dt):
 # ---------------------------------------------------------------------------
 
 def calculate(city, country, year, month, day, hour, minute):
-    # 1. Geocode location
-    lat, lon = geocode(city, country)
+    # 1. Geocode location (fallback: São Paulo)
+    if city and city.strip():
+        try:
+            time.sleep(1.1)
+            geolocator = Nominatim(user_agent="petastral-calculator/1.0")
+            location = geolocator.geocode(f"{city}, {country}", timeout=10)
+            if location:
+                lat, lon = location.latitude, location.longitude
+            else:
+                lat, lon = DEFAULT_LAT, DEFAULT_LON
+        except Exception:
+            lat, lon = DEFAULT_LAT, DEFAULT_LON
+    else:
+        lat, lon = DEFAULT_LAT, DEFAULT_LON
 
     # 2. Build UTC datetime
     dt = datetime(year, month, day, hour, minute, tzinfo=timezone.utc)
