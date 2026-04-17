@@ -309,9 +309,9 @@ def call_gemini(prompt):
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY not set")
 
-    primary_model  = "gemini-2.5-flash"
-    fallback_model = "gemini-2.0-flash"
-    fallback_url   = "https://generativelanguage.googleapis.com/v1/models/"
+    primary_model  = "gemini-2.0-flash"
+    fallback_model = "gemini-2.5-flash"
+    fallback_url   = GEMINI_BASE_URL
 
     try:
         result = _call_gemini_model(prompt, primary_model, GEMINI_BASE_URL, api_key)
