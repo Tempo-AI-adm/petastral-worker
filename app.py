@@ -25,14 +25,27 @@ app = Flask(__name__)
 
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/"
 
-GEMINI_SYSTEM_INSTRUCTION = (
-    "You are PetAstral's intelligence engine. Generate a professional, realistic "
-    "personality and wellness guide combining Western Astrology with Animal Genetics "
-    "(breed for dogs, fur color for cats). Tone: professional, technical, realistic. "
-    "Use terms like 'behavioral tendencies' and 'astrological characteristics'. "
-    "Avoid absolute predictions. Each chapter minimum 300 words with practical daily "
-    "examples. Write fluidly with natural document appearance."
-)
+GEMINI_SYSTEM_INSTRUCTION = """Você é o motor de inteligência do SignoPet. Gere um guia de personalidade e comportamento para pets combinando Astrologia Ocidental com características genéticas da raça (cães) ou pelagem (gatos).
+
+Tom: direto, caloroso, prático. Fale como um especialista em comportamento animal que também entende de astrologia — não como um astrólogo genérico. Use exemplos concretos do dia a dia do pet. Evite linguagem corporativa ou frases vagas.
+
+Regras obrigatórias:
+- Escreva sempre em português do Brasil
+- Use o nome do pet ao longo do texto (não "seu pet" genérico)
+- Cada capítulo mínimo 300 palavras com exemplos práticos reais
+- A Dica Prática deve ser uma instrução concreta e acionável, não uma frase genérica
+- NÃO escreva "Dica Prática" como prefixo dentro do texto da dica — o label já aparece separado
+- Evite previsões absolutas — use "tende a", "costuma", "pode demonstrar"
+- Quando a raça for informada (não SRD), incorpore características comportamentais conhecidas dessa raça
+- Quando for gato SRD, use a pelagem/cor como lente comportamental"""
+
+SIGNOS_PT = {
+    'Aries': 'Áries', 'Taurus': 'Touro', 'Gemini': 'Gêmeos',
+    'Cancer': 'Câncer', 'Leo': 'Leão', 'Virgo': 'Virgem',
+    'Libra': 'Libra', 'Scorpio': 'Escorpião', 'Sagittarius': 'Sagitário',
+    'Capricorn': 'Capricórnio', 'Aquarius': 'Aquário', 'Pisces': 'Peixes'
+}
+ELEMENTOS_PT = {'Fire': 'Fogo', 'Earth': 'Terra', 'Air': 'Ar', 'Water': 'Água'}
 
 # ---------------------------------------------------------------------------
 # Supabase helpers (uses SERVICE ROLE key — bypasses RLS)
@@ -97,109 +110,105 @@ def fail_job(job_id, message):
 def build_gemini_prompt(data, signs):
     hour_display = "não informado" if data.get("hour_unknown") else f"{data['hour']:02d}"
     minute_display = f"{data['minute']:02d}"
-    return f"""Você é um astrólogo especialista em pets. Gere um laudo astrológico completo para o pet abaixo.
 
-DADOS DO PET:
+    pet_type = data['pet_type']
+    breed = data['breed']
+    is_srd = 'srd' in breed.lower() or 'vira' in breed.lower()
+
+    raca_contexto = ""
+    if pet_type == 'dog' and not is_srd:
+        grupos = {
+            'energetico': ['Pinscher', 'Jack Russell', 'Chihuahua', 'Spitz'],
+            'carente': ['Golden', 'Labrador', 'Lhasa', 'Beagle', 'Cocker'],
+            'independente': ['Husky'],
+            'dondoca': ['Shih Tzu', 'Poodle', 'Yorkshire', 'Maltês', 'Bichon'],
+            'preguicoso': ['Bulldog', 'Basset', 'Pug', 'Dachshund', 'Salsicha'],
+            'intenso': ['Border Collie', 'Pastor Alemão', 'Dálmata', 'Dobermann', 'Blue Heeler'],
+            'caos': ['Rottweiler', 'Pitbull', 'Boxer', 'Corgi', 'Galgo', 'Sphynx', 'Bengal']
+        }
+        perfis = {
+            'energetico': 'Alta energia, impulsivo, precisa de estímulo constante e limites claros. Ladra e age antes de pensar.',
+            'carente': 'Altamente sociável e dependente do tutor. Sofre com solidão. Demonstra afeto excessivo e busca aprovação.',
+            'independente': 'Autônomo, teimoso, age por vontade própria. Não responde bem a ordens repetitivas. Respeita, não obedece.',
+            'dondoca': 'Sensível, gosta de conforto e atenção. Não tolera bem ambientes caóticos. Vínculo emocional intenso com o tutor.',
+            'preguicoso': 'Baixa energia, prefere descanso a exercício. Testa limites com passividade. Conforto é prioridade.',
+            'intenso': 'Foco extremo, precisa de trabalho mental. Sem estímulo, cria comportamentos destrutivos. Aprende rápido.',
+            'caos': 'Imprevisível, dominante, testa hierarquia constantemente. Precisa de tutor firme e consistente.'
+        }
+        for grupo, racas in grupos.items():
+            if any(r.lower() in breed.lower() for r in racas):
+                raca_contexto = f"\nPERFIL COMPORTAMENTAL DA RAÇA ({breed}): {perfis[grupo]}\nUse esse perfil como contexto base ao longo de todos os capítulos — como a raça amplifica ou contrasta com os posicionamentos astrais."
+                break
+        if not raca_contexto:
+            raca_contexto = f"\nRAÇA: {breed}. Incorpore características comportamentais conhecidas dessa raça ao longo dos capítulos."
+
+    pelagem_contexto = ""
+    if pet_type == 'cat' and is_srd:
+        cor = (data.get('pet_color') or '').lower()
+        pelagens = {
+            'preto': 'Gatos pretos tendem a ser mais independentes e observadores. Escolhem quando interagir — não respondem bem a atenção forçada.',
+            'branco': 'Gatos brancos costumam ser mais sensíveis a barulho e mudanças de ambiente. Precisam de previsibilidade.',
+            'cinza': 'Pelagem cinza frequentemente associada a temperamento equilibrado — nem muito grudento, nem muito distante.',
+            'caramelo': 'Gatos caramelo/laranja tendem a ser mais sociais e expressivos. Pedem atenção ativamente.',
+            'marrom': 'Perfil curioso e explorador. Gosta de investigar território e objetos novos.',
+            'tigrado': 'Instinto de caça mais pronunciado. Territorial, precisa de espaço e hierarquia respeitada.',
+        }
+        for key, desc in pelagens.items():
+            if key in cor:
+                pelagem_contexto = f"\nPERFIL COMPORTAMENTAL POR PELAGEM ({cor}): {desc}\nUse esse perfil como camada adicional ao longo dos capítulos."
+                break
+
+    return f"""DADOS DO PET:
 Nome: {data['pet_name']}
-Tipo: {data['pet_type']}
-Raça/Pelagem: {data['breed']}
+Tipo: {pet_type}
+Raça/Pelagem: {breed}
 Sexo: {data['sex']}
 Cor: {data.get('pet_color') or 'não informado'}
+Marcações: {data.get('pet_markings') or 'não informado'}
 Data de Nascimento: {data['day']:02d}/{data['month']:02d}/{data['year']} às {hour_display}:{minute_display}h
 Local: {data['city']}, {data['country']}
+{raca_contexto}{pelagem_contexto}
 
-POSICIONAMENTOS ASTRAIS:
-Sol em {signs['sun']}, Lua em {signs['moon']}, Mercúrio em {signs['mercury']},
-Vênus em {signs['venus']}, Marte em {signs['mars']}, Júpiter em {signs['jupiter']},
-Saturno em {signs['saturn']}, Urano em {signs['uranus']}, Netuno em {signs['neptune']},
-Plutão em {signs['pluto']}, Elemento Predominante: {signs['dominant_element']}
+DADOS ASTRAIS CALCULADOS:
+- Sol em {signs['sun']}
+- Lua em {signs['moon']}
+- Mercúrio em {signs['mercury']}
+- Vênus em {signs['venus']}
+- Marte em {signs['mars']}
+- Júpiter em {signs['jupiter']}
+- Saturno em {signs['saturn']}
+- Urano em {signs['uranus']}
+- Netuno em {signs['neptune']}
+- Plutão em {signs['pluto']}
+- Elemento Predominante: {signs['dominant_element']}
 
-REGRAS OBRIGATÓRIAS:
-- Escreva TODO o conteúdo em português do Brasil
-- Use os nomes dos signos em português com acento (ex: Áries, Touro, Gêmeos, Câncer, Leão, Virgem, Libra, Escorpião, Sagitário, Capricórnio, Aquário, Peixes)
-- OBRIGATÓRIO: gerar exatamente 10 blocos ##CAPITULO_START## até ##CAPITULO_END##
-- Cada campo da Visão Astral: máximo 1 frase curta e direta (máximo 15 palavras)
-- Cada capítulo: máximo 120 palavras. Seja direto e objetivo. Prefira frases curtas. Não repita informações entre capítulos.
-- Não adicione texto fora dos delimitadores
+TAREFA: GERE O GUIA SIGNOPET COMPLETO
 
-Responda EXATAMENTE neste formato:
+ESTRUTURA DO LAUDO:
 
-##VISAO_ASTRAL_START##
-PERSONALIDADE: [máximo 1 frase, 15 palavras]
-EMOCOES: [máximo 1 frase, 15 palavras]
-ENERGIA: [máximo 1 frase, 15 palavras]
-RELACIONAMENTO: [máximo 1 frase, 15 palavras]
-##VISAO_ASTRAL_END##
+**0. VISÃO ASTRAL (Resumo)**
+Uma frase direta e personalizada para cada dimensão — cite o nome do pet e algo específico:
+- Personalidade:
+- Emoções:
+- Energia:
+- Relacionamento:
 
-##CAPITULO_START##
-NUMERO: 1
-TITULO: Sol em {signs['sun']}: Essência, Comportamento e Personalidade
-CONTEUDO:
-[máximo 120 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
-##CAPITULO_END##
+**CAPÍTULOS** (mínimo 300 palavras cada, com exemplos concretos do dia a dia):
 
-##CAPITULO_START##
-NUMERO: 2
-TITULO: Lua em {signs['moon']}: Emoções, Necessidades e Vínculo com o Tutor
-CONTEUDO:
-[máximo 120 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
-##CAPITULO_END##
+**1. Sol em {signs['sun']}: Essência, Comportamento e Personalidade**
+**2. Lua em {signs['moon']}: Emoções, Necessidades e Vínculo com o Tutor**
+**3. Elementos Astrológicos: O Ambiente e a Energia Ideal**
+**4. Mercúrio em {signs['mercury']}: Como {data['pet_name']} Se Comunica**
+**5. Vênus em {signs['venus']}: Relacionamentos e Conexões**
+**6. Marte em {signs['mars']}: Energia, Atividade e Comportamento**
+**7. Júpiter em {signs['jupiter']}: Sorte, Descobertas e Expansão**
+**8. Saturno em {signs['saturn']}: Desafios e Aprendizados**
+**9. Urano, Netuno e Plutão: Transformações e Propósito**
+**PILAR DE BEM-ESTAR (FINAL): Dicas Práticas**
 
-##CAPITULO_START##
-NUMERO: 3
-TITULO: Elementos Astrológicos: O Ambiente e a Energia Ideal
-CONTEUDO:
-[máximo 120 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
-##CAPITULO_END##
-
-##CAPITULO_START##
-NUMERO: 4
-TITULO: Mercúrio em {signs['mercury']}: Como Seu Pet Se Comunica
-CONTEUDO:
-[máximo 120 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
-##CAPITULO_END##
-
-##CAPITULO_START##
-NUMERO: 5
-TITULO: Vênus em {signs['venus']}: Relacionamentos e Conexões
-CONTEUDO:
-[máximo 120 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
-##CAPITULO_END##
-
-##CAPITULO_START##
-NUMERO: 6
-TITULO: Marte em {signs['mars']}: Energia, Atividade e Comportamento
-CONTEUDO:
-[máximo 120 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
-##CAPITULO_END##
-
-##CAPITULO_START##
-NUMERO: 7
-TITULO: Júpiter em {signs['jupiter']}: Sorte, Descobertas e Expansão
-CONTEUDO:
-[máximo 120 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
-##CAPITULO_END##
-
-##CAPITULO_START##
-NUMERO: 8
-TITULO: Saturno em {signs['saturn']}: Desafios e Aprendizados
-CONTEUDO:
-[máximo 120 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
-##CAPITULO_END##
-
-##CAPITULO_START##
-NUMERO: 9
-TITULO: Urano, Netuno e Plutão: Transformações e Propósito
-CONTEUDO:
-[máximo 120 palavras. Use ### para subtítulos. Termine com ### Dica Prática seguido da dica.]
-##CAPITULO_END##
-
-##CAPITULO_START##
-NUMERO: 10
-TITULO: Pilar de Bem-Estar: Dicas Práticas
-CONTEUDO:
-[máximo 120 palavras com dicas práticas. Use ### para subtítulos.]
-##CAPITULO_END##"""
+Em cada capítulo, termine com uma seção assim:
+### Dica Prática
+[instrução concreta e acionável — sem repetir "Dica Prática" no texto]"""
 
 
 def _parse_gemini_response(raw_text):
@@ -499,6 +508,8 @@ def process_job():
         "pluto":            raw_signs["pluto_sign"],
         "dominant_element": raw_signs["dominant_element"],
     }
+    signs = {k: SIGNOS_PT.get(v, v) for k, v in signs.items()}
+    signs["dominant_element"] = ELEMENTOS_PT.get(signs["dominant_element"], signs["dominant_element"])
 
     # 4. Gemini report generation
     try:
@@ -576,6 +587,8 @@ def _process_generate(payment_id, pet_data, email):
             "pluto":            raw_signs["pluto_sign"],
             "dominant_element": raw_signs["dominant_element"],
         }
+        signs = {k: SIGNOS_PT.get(v, v) for k, v in signs.items()}
+        signs["dominant_element"] = ELEMENTOS_PT.get(signs["dominant_element"], signs["dominant_element"])
 
         # 3. Gemini report generation
         report_text = _parse_gemini_response(call_gemini(build_gemini_prompt(data, signs)))
