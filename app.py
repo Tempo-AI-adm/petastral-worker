@@ -147,19 +147,27 @@ def build_gemini_prompt(data, signs):
         cor = (data.get('pet_color') or '').lower()
         pelagens = {
             'preto': 'Gatos pretos tendem a ser mais independentes e observadores. Escolhem quando interagir — não respondem bem a atenção forçada.',
-            'branco': 'Gatos brancos costumam ser mais sensíveis a barulho e mudanças de ambiente. Precisam de previsibilidade.',
-            'cinza': 'Pelagem cinza frequentemente associada a temperamento equilibrado — nem muito grudento, nem muito distante.',
-            'caramelo': 'Gatos caramelo/laranja tendem a ser mais sociais e expressivos. Pedem atenção ativamente.',
-            'marrom': 'Perfil curioso e explorador. Gosta de investigar território e objetos novos.',
-            'tigrado': 'Instinto de caça mais pronunciado. Territorial, precisa de espaço e hierarquia respeitada.',
+            'branco': 'Gatos brancos costumam ser mais sensíveis a barulho e mudanças de ambiente. Precisam de previsibilidade e silêncio.',
+            'cinza': 'Pelagem cinza associada a temperamento equilibrado — nem muito grudento, nem muito distante. Adaptável.',
+            'caramelo': 'Gatos caramelo/laranja tendem a ser mais sociais e expressivos. Pedem atenção ativamente e são comunicativos.',
+            'marrom': 'Perfil curioso e explorador. Gosta de investigar território e objetos novos. Ativo e inquieto.',
+            'tigrado': 'Instinto de caça pronunciado. Territorial, precisa de espaço e estímulo para caçar. Gatos tigrados laranjas são conhecidos por personalidade extrovertida e bagunceira.',
         }
-        for key, desc in pelagens.items():
-            if key in cor:
-                pelagem_contexto = f"\nPERFIL COMPORTAMENTAL POR PELAGEM ({cor}): {desc}\nUse esse perfil como camada adicional ao longo dos capítulos."
-                break
+        cores_lista = [c.strip() for c in cor.split(',') if c.strip()]
+        if len(cores_lista) > 1:
+            descricoes = [pelagens[c] for c in cores_lista if c in pelagens]
+            if descricoes:
+                pelagem_contexto = f"\nPERFIL COMPORTAMENTAL POR PELAGEM ({cor}): combinação de {' / '.join(cores_lista)}. {' '.join(descricoes)}\nUse essas características como camada adicional ao longo dos capítulos."
+        else:
+            for key, desc in pelagens.items():
+                if key in cor:
+                    pelagem_contexto = f"\nPERFIL COMPORTAMENTAL POR PELAGEM ({cor}): {desc}\nUse esse perfil como camada adicional ao longo dos capítulos."
+                    break
+
+    pet_name = data['pet_name'].strip().title()
 
     return f"""DADOS DO PET:
-Nome: {data['pet_name']}
+Nome: {pet_name}
 Tipo: {pet_type}
 Raça/Pelagem: {breed}
 Sexo: {data['sex']}
@@ -184,31 +192,82 @@ DADOS ASTRAIS CALCULADOS:
 
 TAREFA: GERE O GUIA SIGNOPET COMPLETO
 
-ESTRUTURA DO LAUDO:
+##VISAO_ASTRAL_START##
+PERSONALIDADE: [frase direta citando {pet_name} — máximo 15 palavras]
+EMOCOES: [frase direta citando {pet_name} — máximo 15 palavras]
+ENERGIA: [frase direta citando {pet_name} — máximo 15 palavras]
+RELACIONAMENTO: [frase direta citando {pet_name} — máximo 15 palavras]
+##VISAO_ASTRAL_END##
 
-**0. VISÃO ASTRAL (Resumo)**
-Uma frase direta e personalizada para cada dimensão — cite o nome do pet e algo específico:
-- Personalidade:
-- Emoções:
-- Energia:
-- Relacionamento:
+##CAPITULO_START##
+NUMERO: 1
+TITULO: Sol em {signs['sun']}: Essência, Comportamento e Personalidade
+CONTEUDO:
+[mínimo 300 palavras, exemplos concretos do dia a dia de {pet_name}, termine com ### Dica Prática seguido da dica sem repetir o prefixo]
+##CAPITULO_END##
 
-**CAPÍTULOS** (mínimo 300 palavras cada, com exemplos concretos do dia a dia):
+##CAPITULO_START##
+NUMERO: 2
+TITULO: Lua em {signs['moon']}: Emoções, Necessidades e Vínculo com o Tutor
+CONTEUDO:
+[mínimo 300 palavras, exemplos concretos, termine com ### Dica Prática]
+##CAPITULO_END##
 
-**1. Sol em {signs['sun']}: Essência, Comportamento e Personalidade**
-**2. Lua em {signs['moon']}: Emoções, Necessidades e Vínculo com o Tutor**
-**3. Elementos Astrológicos: O Ambiente e a Energia Ideal**
-**4. Mercúrio em {signs['mercury']}: Como {data['pet_name']} Se Comunica**
-**5. Vênus em {signs['venus']}: Relacionamentos e Conexões**
-**6. Marte em {signs['mars']}: Energia, Atividade e Comportamento**
-**7. Júpiter em {signs['jupiter']}: Sorte, Descobertas e Expansão**
-**8. Saturno em {signs['saturn']}: Desafios e Aprendizados**
-**9. Urano, Netuno e Plutão: Transformações e Propósito**
-**PILAR DE BEM-ESTAR (FINAL): Dicas Práticas**
+##CAPITULO_START##
+NUMERO: 3
+TITULO: Elementos Astrológicos: O Ambiente e a Energia Ideal
+CONTEUDO:
+[mínimo 300 palavras, exemplos concretos, termine com ### Dica Prática]
+##CAPITULO_END##
 
-Em cada capítulo, termine com uma seção assim:
-### Dica Prática
-[instrução concreta e acionável — sem repetir "Dica Prática" no texto]"""
+##CAPITULO_START##
+NUMERO: 4
+TITULO: Mercúrio em {signs['mercury']}: Como {pet_name} Se Comunica
+CONTEUDO:
+[mínimo 300 palavras, exemplos concretos, termine com ### Dica Prática]
+##CAPITULO_END##
+
+##CAPITULO_START##
+NUMERO: 5
+TITULO: Vênus em {signs['venus']}: Relacionamentos e Conexões
+CONTEUDO:
+[mínimo 300 palavras, exemplos concretos, termine com ### Dica Prática]
+##CAPITULO_END##
+
+##CAPITULO_START##
+NUMERO: 6
+TITULO: Marte em {signs['mars']}: Energia, Atividade e Comportamento
+CONTEUDO:
+[mínimo 300 palavras, exemplos concretos, termine com ### Dica Prática]
+##CAPITULO_END##
+
+##CAPITULO_START##
+NUMERO: 7
+TITULO: Júpiter em {signs['jupiter']}: Sorte, Descobertas e Expansão
+CONTEUDO:
+[mínimo 300 palavras, exemplos concretos, termine com ### Dica Prática]
+##CAPITULO_END##
+
+##CAPITULO_START##
+NUMERO: 8
+TITULO: Saturno em {signs['saturn']}: Desafios e Aprendizados
+CONTEUDO:
+[mínimo 300 palavras, exemplos concretos, termine com ### Dica Prática]
+##CAPITULO_END##
+
+##CAPITULO_START##
+NUMERO: 9
+TITULO: Urano, Netuno e Plutão: Transformações e Propósito
+CONTEUDO:
+[mínimo 300 palavras, exemplos concretos, termine com ### Dica Prática]
+##CAPITULO_END##
+
+##CAPITULO_START##
+NUMERO: 10
+TITULO: Pilar de Bem-Estar: Dicas Práticas
+CONTEUDO:
+[4 subtópicos concretos: Rotina, Estímulo Mental, Conexão Afetiva, Atividade Física]
+##CAPITULO_END##"""
 
 
 def _parse_gemini_response(raw_text):
