@@ -36,7 +36,8 @@ Regras obrigatórias:
 - Ao final de cada capítulo, escreva exatamente '### Dica Prática' em uma linha separada, seguido da dica em novo parágrafo. NUNCA repita as palavras 'Dica Prática' dentro do texto da dica em si.
 - Evite previsões absolutas — use "tende a", "costuma", "pode demonstrar"
 - Quando a raça for informada (não SRD), incorpore características comportamentais conhecidas dessa raça
-- Quando for gato SRD, use a pelagem/cor como lente comportamental"""
+- Quando for gato SRD, use a pelagem/cor como lente comportamental
+- Quando o pet for um GATO, incorpore comportamentos específicos felinos: marcar território, amassar (fazer biscoito), ronronar como linguagem, piscar lento como demonstração de confiança, caça noturna e instinto predatório, vocalização específica (miar, trinar, rosnar), a relação com altura e territorialidade vertical, e a diferença fundamental entre gatos e cães na dinâmica com o tutor (gato escolhe quando interagir — não obedece, negocia)"""
 
 SIGNOS_PT = {
     'Aries': 'Áries', 'Taurus': 'Touro', 'Gemini': 'Gêmeos',
@@ -141,6 +142,30 @@ def build_gemini_prompt(data, signs):
         if not raca_contexto:
             raca_contexto = f"\nRAÇA: {breed}. Incorpore características comportamentais conhecidas dessa raça ao longo dos capítulos."
 
+    if pet_type == 'cat' and not is_srd:
+        grupos_gato = {
+            'comunicativo': ['Siamês', 'Siames'],
+            'gigante_gentil': ['Maine Coon'],
+            'relaxado': ['Ragdoll'],
+            'selvagem': ['Bengal', 'Bengala'],
+            'elegante': ['Persa', 'Angorá', 'Angora'],
+            'sem_pelo': ['Sphynx'],
+        }
+        perfis_gato = {
+            'comunicativo': 'Extremamente vocal e interativo. Estabelece conversas longas com o tutor, exige atenção constante e sofre com solidão. Altamente inteligente e curioso. Não é adequado para tutores ausentes.',
+            'gigante_gentil': 'Sociável e dócil como um cão — segue o tutor pela casa, se dá bem com outros animais. Inteligente, aprende truques e adora água. Não é excessivamente carente mas gosta de estar perto.',
+            'relaxado': 'Temperamento extremamente calmo e tolerante. Literalmente relaxa no colo como boneco de pano. Não reage com agressividade, suporta manipulação. Muito sociável, boa opção para famílias.',
+            'selvagem': 'Altamente ativo e inteligente — precisa de 1-2h de estimulação diária ou se torna destrutivo. Adora água, aprende truques, age como cão. Territorial e pode marcar espaço. Não é gato de apartamento pequeno.',
+            'elegante': 'Calmo, quieto e reservado com estranhos. Prefere ambiente tranquilo e rotina previsível. Não demanda atenção mas aprecia carinho suave. Independente sem ser frio.',
+            'sem_pelo': 'Um dos gatos mais sociáveis e afetivos que existem. Segue o tutor em tudo, adora colo e calor humano. Extrovertido com estranhos. Precisa de ambiente quente e banhos regulares pela pele oleosa.',
+        }
+        for grupo, racas in grupos_gato.items():
+            if any(r.lower() in breed.lower() for r in racas):
+                raca_contexto = f"\nPERFIL COMPORTAMENTAL DA RAÇA ({breed}): {perfis_gato[grupo]}\nUse esse perfil como contexto base ao longo de todos os capítulos — como a raça amplifica ou contrasta com os posicionamentos astrais."
+                break
+        if not raca_contexto:
+            raca_contexto = f"\nRAÇA: {breed}. Incorpore características comportamentais conhecidas dessa raça ao longo dos capítulos."
+
     pelagem_contexto = ""
     if pet_type == 'cat' and is_srd:
         cor = (data.get('pet_color') or '').lower()
@@ -156,11 +181,11 @@ def build_gemini_prompt(data, signs):
         if len(cores_lista) > 1:
             descricoes = [pelagens[c] for c in cores_lista if c in pelagens]
             if descricoes:
-                pelagem_contexto = f"\nPERFIL COMPORTAMENTAL POR PELAGEM ({cor}): combinação de {' / '.join(cores_lista)}. {' '.join(descricoes)}\nUse essas características como camada adicional ao longo dos capítulos."
+                pelagem_contexto = f"\nPERFIL COMPORTAMENTAL POR PELAGEM ({cor}): combinação de {' / '.join(cores_lista)}. {' '.join(descricoes)}\nIncorpore essas características de forma orgânica ao longo do texto — mencione a combinação de cores apenas uma vez, de forma natural, sem repetir como tag a cada parágrafo."
         else:
             for key, desc in pelagens.items():
                 if key in cor:
-                    pelagem_contexto = f"\nPERFIL COMPORTAMENTAL POR PELAGEM ({cor}): {desc}\nUse esse perfil como camada adicional ao longo dos capítulos."
+                    pelagem_contexto = f"\nPERFIL COMPORTAMENTAL POR PELAGEM ({cor}): {desc}\nIncorpore essa característica de forma orgânica ao longo do texto — mencione a pelagem apenas uma vez no laudo inteiro, de forma natural, sem repetir como tag a cada parágrafo."
                     break
 
     pet_name = data['pet_name'].strip().title()
@@ -244,7 +269,18 @@ def _parse_gemini_response(raw_text):
             conteudo_match = re.search(r'CONTEUDO:\s*(.*)', cap, re.DOTALL)
             if numero_match and titulo_match and conteudo_match:
                 conteudo = conteudo_match.group(1).strip()
-                conteudo = re.sub(r'(###\s*Dica Prática\s*\n+)Dica Prática\s*', r'\1', conteudo, flags=re.IGNORECASE)
+                conteudo = re.sub(
+                    r'(###\s*Dica Prática\s*\n+)\s*(?:Dica Prática\s*|#+\s*Dica Prática\s*)',
+                    r'\1',
+                    conteudo,
+                    flags=re.IGNORECASE
+                )
+                conteudo = re.sub(
+                    r'(###\s*Dica Prática\s*\n+)Dica Prática[\s:]+',
+                    r'\1',
+                    conteudo,
+                    flags=re.IGNORECASE
+                )
                 result['capitulos'].append({
                     'numero': int(numero_match.group(1)),
                     'titulo': titulo_match.group(1).strip(),
