@@ -263,6 +263,8 @@ ENERGIA: [frase cruzando Marte + nível energético real da raça]
 RELACIONAMENTO: [frase cruzando Vênus + como a raça se vincula ao tutor]
 ##VISAO_ASTRAL_END##
 
+ATENÇÃO CRÍTICA: cada capítulo DEVE começar com ##CAPITULO_START## e DEVE terminar com ##CAPITULO_END## — sem exceção. Se faltar qualquer um desses marcadores, o laudo inteiro será invalidado. Gere TODOS os 9 capítulos completos.
+
 Para cada capítulo abaixo, use exatamente este bloco:
 
 ##CAPITULO_START##
@@ -311,6 +313,11 @@ def _parse_gemini_response(raw_text):
 
         # Extract capitulo blocks
         cap_matches = re.findall(r'##CAPITULO_START##(.*?)##CAPITULO_END##', raw, re.DOTALL)
+        if len(cap_matches) < 8:
+            fallback = [p.split('##CAPITULO_END##')[0] for p in raw.split('##CAPITULO_START##')[1:]]
+            print(f"[parse] regex encontrou {len(cap_matches)}, fallback split encontrou {len(fallback)}", flush=True)
+            if len(fallback) > len(cap_matches):
+                cap_matches = fallback
         for cap in cap_matches:
             numero_match   = re.search(r'NUMERO:\s*(\d+)', cap)
             titulo_match   = re.search(r'TITULO:\s*(.+?)(?=\nCONTEUDO:|CONTEUDO:)', cap, re.DOTALL)
@@ -702,25 +709,46 @@ def _process_generate(payment_id, pet_data, email):
         signs = {k: SIGNOS_PT.get(v, v) for k, v in signs.items()}
         signs["dominant_element"] = ELEMENTOS_PT.get(signs["dominant_element"], signs["dominant_element"])
 
-        # 3. Gemini report generation
-        report_text_raw, model_used = call_gemini(build_gemini_prompt(data, signs))
-        report_text = _parse_gemini_response(report_text_raw)
+        # 3. Gemini report generation — até 3 tentativas por qualidade
+        prompt = build_gemini_prompt(data, signs)
+        report_text = None
+        model_used = None
+        _capitulos_count = 0
+        for gen_attempt in range(3):
+            report_text_raw, model_used = call_gemini(prompt)
+            report_text = _parse_gemini_response(report_text_raw)
+            try:
+                _parsed = json.loads(report_text)
+                _capitulos_count = len(_parsed.get("capitulos", []))
+            except Exception:
+                _capitulos_count = 0
+
+            print(f"[generate] tentativa {gen_attempt+1}/3 — capítulos: {_capitulos_count}", flush=True)
+
+            if _capitulos_count >= 8:
+                break
+
+            if gen_attempt < 2:
+                print(f"[generate] capítulos insuficientes, retentando...", flush=True)
+                time.sleep(5)
 
         # 4. Validate parse before saving
-        try:
-            _parsed = json.loads(report_text)
-            _capitulos_count = len(_parsed.get("capitulos", []))
-        except Exception:
-            _capitulos_count = 0
-
-        if _capitulos_count == 0:
-            print(f"[generate] WARNING: 0 capítulos parseados, marcando como failed", flush=True)
+        if _capitulos_count < 8:
+            print(f"[generate] FALHA: {_capitulos_count} capítulos após 3 tentativas", flush=True)
             requests.patch(
                 _sb_url(f"/rest/v1/payments?id=eq.{payment_id}"),
                 headers={**_sb_headers(), "Prefer": "return=minimal"},
                 json={"laudo_status": "failed", "status": "failed"},
                 timeout=10,
             )
+            try:
+                requests.post(
+                    os.environ.get('FRONTEND_URL', 'https://petastral-signos.vercel.app') + '/api/payment/email',
+                    json={"to": "signopet@gmail.com", "subject": f"FALHA LAUDO - {pet_data.get('pet_name', 'pet')} ({email})", "html": f"<p>Payment {payment_id} falhou após 3 tentativas. {_capitulos_count} capítulos gerados.</p><p>Email cliente: {email}</p>"},
+                    timeout=10,
+                )
+            except Exception:
+                pass
             return
 
         # 5. Save owners → pets → reports
