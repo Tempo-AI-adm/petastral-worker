@@ -114,6 +114,8 @@ def build_gemini_prompt(data, signs):
     pet_type = data['pet_type']
     breed = data['breed']
     is_srd = 'srd' in breed.lower() or 'vira' in breed.lower()
+    signo_tutor = data.get('signo_tutor', '')
+    cor = (data.get('pet_color') or '').lower()
 
     raca_contexto = ""
     if pet_type == 'dog' and not is_srd:
@@ -127,13 +129,13 @@ def build_gemini_prompt(data, signs):
             'caos': ['Rottweiler', 'Pitbull', 'Boxer', 'Corgi', 'Galgo', 'Sphynx', 'Bengal']
         }
         perfis = {
-            'energetico': 'Alta energia, impulsivo, precisa de estímulo constante e limites claros. Ladra e age antes de pensar.',
-            'carente': 'Altamente sociável e dependente do tutor. Sofre com solidão. Demonstra afeto excessivo e busca aprovação.',
-            'independente': 'Autônomo, teimoso, age por vontade própria. Não responde bem a ordens repetitivas. Respeita, não obedece.',
-            'dondoca': 'Sensível, gosta de conforto e atenção. Não tolera bem ambientes caóticos. Vínculo emocional intenso com o tutor.',
-            'preguicoso': 'Baixa energia, prefere descanso a exercício. Testa limites com passividade. Conforto é prioridade.',
-            'intenso': 'Foco extremo, precisa de trabalho mental. Sem estímulo, cria comportamentos destrutivos. Aprende rápido.',
-            'caos': 'Imprevisível, dominante, testa hierarquia constantemente. Precisa de tutor firme e consistente.'
+            "energetico": "Alta energia constante, reativo a qualquer estímulo sonoro ou visual. Late antes de pensar, guarda território mesmo sendo pequeno. Tende a se vincular intensamente a uma pessoa e ser possessivo com brinquedos. Não conhece o próprio tamanho — enfrenta cães maiores sem hesitar. Precisa de estímulo mental diário ou desenvolve ansiedade, lambedura excessiva e latido compulsivo. Pinscher: vigia nato, desconfia de tudo. Jack Russell: energia inesgotável, cava, escala. Chihuahua: grudento com o dono, agressivo com estranhos. Spitz: teatral, late para chamar atenção, manipulador emocional.",
+            "carente": "Profundamente sociável, vive para aprovação humana. Ansiedade de separação é comum — pode uivar, roer e andar em círculos quando sozinho. Traz objetos como presente, cutuca para pedir carinho, segue o tutor de cômodo em cômodo. Extremamente motivado por comida. Golden/Labrador: carrega tudo na boca com delicadeza, 'boca mole'. Beagle: nariz comanda tudo, ignora comandos quando rastreia um cheiro. Cocker: sensibilidade emocional extrema, responde ao tom de voz. Lhasa: leal mas teimoso, guardião apesar do tamanho.",
+            "independente": "Autônomo, tem agenda própria e não se submete por obediência. Vocal (uiva, 'fala', responde) mas não necessariamente obediente. Artista da fuga — pula cercas, abre portas, cava túneis. Mentalidade de matilha mas sem submissão. Instinto de caça alto, não confiável solto. Reações dramáticas a inconvenientes menores. Precisa de exercício intenso diário ou destrói a casa metodicamente.",
+            "dondoca": "Busca conforto, prefere superfícies macias e calor. Sensível a mudanças no ambiente, barulho e manuseio brusco. Vínculo emocional forte com o cuidador principal — pode ter ciúmes. Poodle: extremamente inteligente, aprende rápido, manipula o dono com charme. Yorkshire: corajoso apesar do tamanho, territorial com a casa. Shih Tzu: criado para companhia, feliz no colo, não precisa de exercício intenso. Maltês: afetuoso, sensível, pode ser medroso. Bichon: alegre, palhaço, odeia ficar sozinho.",
+            "preguicoso": "Baixa energia, prefere descanso. Testa limites com resistência passiva — deita no chão e se recusa a andar. Conforto é inegociável — melhor cama, melhor lugar. Bulldog: ronca, superaquece fácil, teimoso silencioso. Pug: palhaço natural, busca atenção apesar da preguiça, expressivo com os olhos. Dachshund: surpreendentemente teimoso e vocal pra seu tamanho, instinto de caça subterrânea. Basset: nariz comanda, pode ser mono-focado em um cheiro, ignora tudo ao redor.",
+            "intenso": "Foco extremo, precisa de trabalho mental diário ou colapsa. Sem estímulo: pastoreia crianças, persegue sombras, destrói móveis por frustração. Aprende comandos em 1-3 repetições. Border Collie: olhar fixo intenso, tenta controlar movimento de tudo que se mexe. Pastor Alemão: protetor, territorial, se vincula a uma pessoa acima de todas. Dobermann: elegante e alerta, pode desenvolver ansiedade sem estrutura. Dálmata: energia explosiva, precisa de exercício intenso. Blue Heeler: morde calcanhares por instinto, precisa de trabalho ou inventa um.",
+            "caos": "Energia imprevisível, testa hierarquia constantemente. Precisa de liderança firme e consistente ou preenche o vácuo. Rottweiler: exterior calmo, observador, protetor silencioso. Pitbull: extremamente carinhoso com a família, força de vontade enorme, pegajoso. Boxer: eterno filhote, pula, usa as patas como mãos, brincalhão até velho. Corgi: instinto de pastoreio, mandão, late para controlar situações. Galgo: calmo dentro de casa, explosivo no quintal, alma sensível por trás da velocidade.",
         }
         for grupo, racas in grupos.items():
             if any(r.lower() in breed.lower() for r in racas):
@@ -141,6 +143,9 @@ def build_gemini_prompt(data, signs):
                 break
         if not raca_contexto:
             raca_contexto = f"\nRAÇA: {breed}. Incorpore características comportamentais conhecidas dessa raça ao longo dos capítulos."
+
+    if pet_type == 'dog' and is_srd:
+        raca_contexto = "\nPERFIL COMPORTAMENTAL (SRD / Vira-lata): Mistura genética cria coquetel comportamental único — impossível generalizar, mas padrões existem. Geralmente mais resiliente e adaptável que raças puras. Instintos de sobrevivência: pode guardar comida, marcar território com mais frequência, estar sempre alerta a ameaças. Inteligência social alta: lê emoções humanas com precisão. Tendência a ser independente mas leal quando conquista confiança. Cada SRD é genuinamente único — o mapa astral ganha importância extra porque a raça não define o comportamento.\nUse esse perfil como contexto base ao longo de todos os capítulos — como o instinto de sobrevivência e a adaptabilidade do SRD amplifica ou contrasta com os posicionamentos astrais."
 
     if pet_type == 'cat' and not is_srd:
         grupos_gato = {
@@ -152,12 +157,12 @@ def build_gemini_prompt(data, signs):
             'sem_pelo': ['Sphynx'],
         }
         perfis_gato = {
-            'comunicativo': 'Extremamente vocal e interativo. Estabelece conversas longas com o tutor, exige atenção constante e sofre com solidão. Altamente inteligente e curioso. Não é adequado para tutores ausentes.',
-            'gigante_gentil': 'Sociável e dócil como um cão — segue o tutor pela casa, se dá bem com outros animais. Inteligente, aprende truques e adora água. Não é excessivamente carente mas gosta de estar perto.',
-            'relaxado': 'Temperamento extremamente calmo e tolerante. Literalmente relaxa no colo como boneco de pano. Não reage com agressividade, suporta manipulação. Muito sociável, boa opção para famílias.',
-            'selvagem': 'Altamente ativo e inteligente — precisa de 1-2h de estimulação diária ou se torna destrutivo. Adora água, aprende truques, age como cão. Territorial e pode marcar espaço. Não é gato de apartamento pequeno.',
-            'elegante': 'Calmo, quieto e reservado com estranhos. Prefere ambiente tranquilo e rotina previsível. Não demanda atenção mas aprecia carinho suave. Independente sem ser frio.',
-            'sem_pelo': 'Um dos gatos mais sociáveis e afetivos que existem. Segue o tutor em tudo, adora colo e calor humano. Extrovertido com estranhos. Precisa de ambiente quente e banhos regulares pela pele oleosa.',
+            "comunicativo": "Extremamente vocal e interativo. Estabelece conversas longas com o tutor, exige atenção constante e sofre com solidão. Altamente inteligente e curioso. Não é adequado para tutores ausentes.",
+            "gigante_gentil": "Sociável e dócil como um cão — segue o tutor pela casa, se dá bem com outros animais. Inteligente, aprende truques e adora água. Não é excessivamente carente mas gosta de estar perto.",
+            "relaxado": "Temperamento extremamente calmo e tolerante. Literalmente relaxa no colo como boneco de pano. Não reage com agressividade, suporta manipulação. Muito sociável, boa opção para famílias.",
+            "selvagem": "Altamente ativo e inteligente — precisa de 1-2h de estimulação diária ou se torna destrutivo. Adora água, aprende truques, age como cão. Territorial e pode marcar espaço. Não é gato de apartamento pequeno.",
+            "elegante": "Calmo, quieto e reservado com estranhos. Prefere ambiente tranquilo e rotina previsível. Não demanda atenção mas aprecia carinho suave. Independente sem ser frio.",
+            "sem_pelo": "Um dos gatos mais sociáveis e afetivos que existem. Segue o tutor em tudo, adora colo e calor humano. Extrovertido com estranhos. Precisa de ambiente quente e banhos regulares pela pele oleosa.",
         }
         for grupo, racas in grupos_gato.items():
             if any(r.lower() in breed.lower() for r in racas):
@@ -167,23 +172,42 @@ def build_gemini_prompt(data, signs):
             raca_contexto = f"\nRAÇA: {breed}. Incorpore características comportamentais conhecidas dessa raça ao longo dos capítulos."
 
     pelagem_contexto = ""
-    if pet_type == 'cat' and is_srd:
-        cor = (data.get('pet_color') or '').lower()
-        pelagens = {
-            'preto': 'Gatos pretos tendem a ser mais independentes e observadores. Escolhem quando interagir — não respondem bem a atenção forçada.',
-            'branco': 'Gatos brancos costumam ser mais sensíveis a barulho e mudanças de ambiente. Precisam de previsibilidade e silêncio.',
-            'cinza': 'Pelagem cinza associada a temperamento equilibrado — nem muito grudento, nem muito distante. Adaptável.',
-            'caramelo': 'Gatos caramelo/laranja tendem a ser mais sociais e expressivos. Pedem atenção ativamente e são comunicativos.',
-            'marrom': 'Perfil curioso e explorador. Gosta de investigar território e objetos novos. Ativo e inquieto.',
-            'tigrado': 'Instinto de caça pronunciado. Territorial, precisa de espaço e estímulo para caçar. Gatos tigrados laranjas são conhecidos por personalidade extrovertida e bagunceira.',
+    if pet_type == 'dog' and is_srd:
+        pelagem_dog = {
+            "caramelo": "O icônico vira-lata caramelo brasileiro — sociável, adaptável, o cachorro que se dá bem com todo mundo. Emocionalmente resiliente mas busca afeto constante.",
+            "preto": "Tende a ser calmo, leal e observador. Guardião por natureza. Muitas vezes subestimado mas profundamente conectado ao dono.",
+            "branco": "Pode ser mais sensível a estímulos ambientais. Tende a ser mais cauteloso e reservado inicialmente.",
+            "cinza": "Temperamento equilibrado e adaptável. Observador antes de agir.",
+            "marrom": "Ativo, curioso, explorador. Gosta de investigar tudo que é novo no ambiente.",
+            "creme": "Dócil e tranquilo. Tende a ser mais suave nas reações e nas brincadeiras.",
         }
         cores_lista = [c.strip() for c in cor.split(',') if c.strip()]
         if len(cores_lista) > 1:
-            descricoes = [pelagens[c] for c in cores_lista if c in pelagens]
+            descricoes = [pelagem_dog[c] for c in cores_lista if c in pelagem_dog]
             if descricoes:
                 pelagem_contexto = f"\nPERFIL COMPORTAMENTAL POR PELAGEM ({cor}): combinação de {' / '.join(cores_lista)}. {' '.join(descricoes)}\nIncorpore essas características de forma orgânica ao longo do texto — mencione a combinação de cores apenas uma vez, de forma natural, sem repetir como tag a cada parágrafo."
         else:
-            for key, desc in pelagens.items():
+            for key, desc in pelagem_dog.items():
+                if key in cor:
+                    pelagem_contexto = f"\nPERFIL COMPORTAMENTAL POR PELAGEM ({cor}): {desc}\nIncorpore essa característica de forma orgânica ao longo do texto — mencione a pelagem apenas uma vez no laudo inteiro, de forma natural, sem repetir como tag a cada parágrafo."
+                    break
+    if pet_type == 'cat' and is_srd:
+        pelagem_gato = {
+            "preto": "Independente e observador. Escolhe quando interagir — não responde bem a atenção forçada. Na tradição popular é considerado místico e protetor. Tende a ser mais cauteloso com estranhos, mas profundamente leal quando se vincula.",
+            "branco": "Sensível a barulho e mudanças de ambiente. Precisa de previsibilidade e silêncio. Pode ser mais reservado. Elegante e seletivo com quem interage.",
+            "cinza": "Temperamento equilibrado — nem grudento nem distante. Adaptável a diferentes ambientes. Temperamento similar ao Russian Blue mesmo em SRD. Observador e tranquilo.",
+            "caramelo": "O 'golden retriever dos gatos' — social, expressivo, pede atenção ativamente. 80% dos gatos laranjas são machos. Conhecido por ser atrapalhado, brincalhão e goofar. Personalidade grande.",
+            "marrom": "Curioso e explorador. Investiga território e objetos novos. Ativo e inquieto. Precisa de enriquecimento ambiental.",
+            "creme": "Dócil e sereno. Tende a ser mais calmo e menos reativo que outras pelagens. Aprecia rotina e tranquilidade.",
+            "tigrado": "Instinto de caça pronunciado. Territorial, precisa de espaço e estímulo para caçar. Tigrados laranjas: extrovertidos e bagunceiros, personalidade de palhaço. Tigrados marrons/cinza: mais equilibrados e caçadores metódicos.",
+        }
+        cores_lista = [c.strip() for c in cor.split(',') if c.strip()]
+        if len(cores_lista) > 1:
+            descricoes = [pelagem_gato[c] for c in cores_lista if c in pelagem_gato]
+            if descricoes:
+                pelagem_contexto = f"\nPERFIL COMPORTAMENTAL POR PELAGEM ({cor}): combinação de {' / '.join(cores_lista)}. {' '.join(descricoes)}\nIncorpore essas características de forma orgânica ao longo do texto — mencione a combinação de cores apenas uma vez, de forma natural, sem repetir como tag a cada parágrafo."
+        else:
+            for key, desc in pelagem_gato.items():
                 if key in cor:
                     pelagem_contexto = f"\nPERFIL COMPORTAMENTAL POR PELAGEM ({cor}): {desc}\nIncorpore essa característica de forma orgânica ao longo do texto — mencione a pelagem apenas uma vez no laudo inteiro, de forma natural, sem repetir como tag a cada parágrafo."
                     break
@@ -216,33 +240,57 @@ DADOS ASTRAIS CALCULADOS:
 
 TAREFA: GERE O GUIA SIGNOPET COMPLETO
 
+REGRAS INEGOCIÁVEIS:
+- NUNCA gere texto genérico que serviria para qualquer pet. Cada parágrafo deve ter pelo menos um cruzamento específico entre signo e raça/pelagem.
+- Use o nome {pet_name} em todo o texto — nunca "o pet" ou "o animal".
+- Quando mencionar um traço comportamental da raça ou pelagem, contextualize brevemente de onde vem essa informação (ex: "criadores de Border Collie relatam que...", "a etologia felina associa gatos tigrados a...", "estudos sobre temperamento canino mostram que..."). Faça isso de forma orgânica, 1-2 vezes por capítulo, sem parecer artigo científico.
+- O tom é de um astrólogo que entende de comportamento animal — fluido, acessível, com autoridade mas sem jargão técnico pesado.
+- Cada capítulo deve ter exemplos concretos do dia a dia que o tutor vai reconhecer imediatamente ("você pode notar que...", "não estranhe se...").
+- NUNCA repita a mesma informação em capítulos diferentes. Se mencionou um traço no capítulo 1, não repita nos seguintes.
+- O tutor é de {signo_tutor} — use essa informação de forma sutil ao longo do texto, especialmente nos capítulos 2 (vínculo) e 5 (relacionamentos).
+
+COMO FAZER CRUZAMENTOS:
+Para cada posicionamento astral, pergunte-se: "como esse traço se manifesta ESPECIFICAMENTE em um {breed} {cor}?" A resposta nunca deve ser genérica.
+- Exemplo RUIM: "Com Sol em Áries, {pet_name} é cheio de energia e iniciativa."
+- Exemplo BOM: "Com Sol em Áries, {pet_name} canaliza a teimosia natural do Dachshund em uma determinação que beira o cômico — ele pode passar 20 minutos tentando alcançar algo debaixo do sofá, usando seu corpo longo como ferramenta de escavação, recusando qualquer ajuda."
+
 FORMATO DE SAÍDA OBRIGATÓRIO — siga exatamente esta estrutura, preenchendo o conteúdo entre os marcadores:
 
 ##VISAO_ASTRAL_START##
-PERSONALIDADE: [escreva aqui uma frase direta sobre personalidade citando {pet_name}]
-EMOCOES: [escreva aqui uma frase sobre emoções citando {pet_name}]
-ENERGIA: [escreva aqui uma frase sobre energia citando {pet_name}]
-RELACIONAMENTO: [escreva aqui uma frase sobre relacionamento citando {pet_name}]
+PERSONALIDADE: [frase direta cruzando signo solar + raça + uma característica comportamental específica de {pet_name}]
+EMOCOES: [frase cruzando Lua + como a raça/pelagem influencia a expressão emocional]
+ENERGIA: [frase cruzando Marte + nível energético real da raça]
+RELACIONAMENTO: [frase cruzando Vênus + como a raça se vincula ao tutor]
 ##VISAO_ASTRAL_END##
 
 Para cada capítulo abaixo, use exatamente este bloco:
+
 ##CAPITULO_START##
 NUMERO: [número]
 TITULO: [título]
 CONTEUDO:
-[mínimo 300 palavras em português, exemplos do dia a dia, termine com ### Dica Prática seguido da dica sem repetir o prefixo no texto]
+[mínimo 250 palavras em português brasileiro. Cada parágrafo deve conter pelo menos um cruzamento signo × raça/pelagem. Exemplos concretos do dia a dia. Termine com ### Dica Prática seguida de uma dica específica para essa combinação de raça+signo — nunca uma dica genérica que serviria para qualquer animal.]
 ##CAPITULO_END##
 
-Capítulos a gerar:
+Capítulos a gerar (TODOS os 9 obrigatórios):
 1. Sol em {signs['sun']}: Essência, Comportamento e Personalidade
+   → Foco: como o signo solar molda o temperamento base da raça. O que amplifica, o que contrasta.
 2. Lua em {signs['moon']}: Emoções, Necessidades e Vínculo com o Tutor
+   → Foco: mundo emocional interno, como busca conforto, relação com o tutor de {signo_tutor}.
 3. Elementos Astrológicos: O Ambiente e a Energia Ideal
+   → Foco: ambiente físico ideal para essa raça+elemento. Concreto: tipo de cama, lugar preferido, rotina ideal.
 4. Mercúrio em {signs['mercury']}: Como {pet_name} Se Comunica
+   → Foco: vocalizações, linguagem corporal, como a raça expressa necessidades. Específico por raça.
 5. Vênus em {signs['venus']}: Relacionamentos e Conexões
+   → Foco: como demonstra afeto, ciúmes, relação com outros pets e pessoas. Dinâmica com tutor de {signo_tutor}.
 6. Marte em {signs['mars']}: Energia, Atividade e Comportamento
+   → Foco: nível de exercício real da raça, brincadeiras preferidas, assertividade.
 7. Júpiter em {signs['jupiter']}: Sorte, Descobertas e Expansão
+   → Foco: o que faz esse pet florescer, onde encontra alegria, momentos de expansão.
 8. Saturno em {signs['saturn']}: Desafios e Aprendizados
-9. Urano, Netuno e Plutão: Transformações e Propósito"""
+   → Foco: medos reais da raça, traumas comuns, desafios comportamentais específicos.
+9. Urano, Netuno e Plutão: Transformações e Propósito
+   → Foco: mudanças ao longo da vida, intuição, propósito mais profundo. Capítulo de encerramento com tom emocional."""
 
 
 def _parse_gemini_response(raw_text):
