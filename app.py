@@ -271,7 +271,7 @@ Para cada capítulo abaixo, use exatamente este bloco:
 NUMERO: [número]
 TITULO: [título]
 CONTEUDO:
-[mínimo 250 palavras em português brasileiro. Cada parágrafo deve conter pelo menos um cruzamento signo × raça/pelagem. Exemplos concretos do dia a dia. Termine com ### Dica Prática seguida de uma dica específica para essa combinação de raça+signo — nunca uma dica genérica que serviria para qualquer animal.]
+[mínimo 250 palavras em português brasileiro. Cada parágrafo deve conter pelo menos um cruzamento signo × raça/pelagem. Exemplos concretos do dia a dia. Termine com uma seção chamada Dica Prática (sem repetir o título no corpo da dica) — dica específica para essa combinação de raça+signo, nunca genérica.]
 ##CAPITULO_END##
 
 Capítulos a gerar (TODOS os 9 obrigatórios):
@@ -548,6 +548,7 @@ def _map_pet_data(pet_data, email):
         "hour_unknown": True,
         "owner_name":   "",
         "owner_email":  email,
+        "signo_tutor":  pet_data.get("signo_tutor", ""),
     }
 
 
