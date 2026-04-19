@@ -657,16 +657,22 @@ def _process_generate(payment_id, pet_data, email):
         report_id, _pet_id = save_to_supabase(data, signs, report_text, model_used=model_used)
 
         # 5. Link report back to the payment row
-        try:
-            patch_resp = requests.patch(
-                _sb_url(f"/rest/v1/payments?id=eq.{payment_id}"),
-                headers=_sb_headers(),
-                json={"report_id": report_id, "laudo_status": "success"},
-                timeout=10,
-            )
-            patch_resp.raise_for_status()
-        except Exception as exc:
-            print(f"[generate] WARNING: payment patch failed for {payment_id}: {exc}", flush=True)
+        for attempt in range(3):
+            try:
+                patch_resp = requests.patch(
+                    _sb_url(f"/rest/v1/payments?id=eq.{payment_id}"),
+                    headers=_sb_headers(),
+                    json={"report_id": report_id, "laudo_status": "success"},
+                    timeout=15,
+                )
+                patch_resp.raise_for_status()
+                print(f"[generate] payment {payment_id} patched to success", flush=True)
+                break
+            except Exception as exc:
+                print(f"[generate] WARNING: payment patch attempt {attempt+1} failed for {payment_id}: {exc}", flush=True)
+                if attempt < 2:
+                    import time
+                    time.sleep(2)
 
         base_url = os.environ.get('FRONTEND_URL', 'https://petastral-signos.vercel.app')
         _send_email(base_url, email, data.get('pet_name', ''), report_id)
