@@ -655,10 +655,7 @@ def _process_generate(payment_id, pet_data, email):
         report_text_raw, model_used = call_gemini(build_gemini_prompt(data, signs))
         report_text = _parse_gemini_response(report_text_raw)
 
-        # 4. Save owners → pets → reports
-        report_id, _pet_id = save_to_supabase(data, signs, report_text, model_used=model_used)
-
-        # 5. Link report back to the payment row
+        # 4. Validate parse before saving
         try:
             _parsed = json.loads(report_text)
             _capitulos_count = len(_parsed.get("capitulos", []))
@@ -673,25 +670,30 @@ def _process_generate(payment_id, pet_data, email):
                 json={"laudo_status": "failed", "status": "failed"},
                 timeout=10,
             )
-        else:
-            for attempt in range(3):
-                try:
-                    patch_resp = requests.patch(
-                        _sb_url(f"/rest/v1/payments?id=eq.{payment_id}"),
-                        headers=_sb_headers(),
-                        json={"report_id": report_id, "laudo_status": "success"},
-                        timeout=15,
-                    )
-                    patch_resp.raise_for_status()
-                    print(f"[generate] payment {payment_id} patched to success", flush=True)
-                    break
-                except Exception as exc:
-                    print(f"[generate] WARNING: payment patch attempt {attempt+1} failed for {payment_id}: {exc}", flush=True)
-                    if hasattr(exc, 'response') and exc.response is not None:
-                        print(f"[generate] Response status: {exc.response.status_code}, body: {exc.response.text[:500]}", flush=True)
-                    if attempt < 2:
-                        import time
-                        time.sleep(2)
+            return
+
+        # 5. Save owners → pets → reports
+        report_id, _pet_id = save_to_supabase(data, signs, report_text, model_used=model_used)
+
+        # 6. Link report back to the payment row
+        for attempt in range(3):
+            try:
+                patch_resp = requests.patch(
+                    _sb_url(f"/rest/v1/payments?id=eq.{payment_id}"),
+                    headers=_sb_headers(),
+                    json={"report_id": report_id, "laudo_status": "success"},
+                    timeout=15,
+                )
+                patch_resp.raise_for_status()
+                print(f"[generate] payment {payment_id} patched to success", flush=True)
+                break
+            except Exception as exc:
+                print(f"[generate] WARNING: payment patch attempt {attempt+1} failed for {payment_id}: {exc}", flush=True)
+                if hasattr(exc, 'response') and exc.response is not None:
+                    print(f"[generate] Response status: {exc.response.status_code}, body: {exc.response.text[:500]}", flush=True)
+                if attempt < 2:
+                    import time
+                    time.sleep(2)
 
         base_url = os.environ.get('FRONTEND_URL', 'https://petastral-signos.vercel.app')
         _send_email(base_url, email, data.get('pet_name', ''), report_id)
