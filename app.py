@@ -316,7 +316,7 @@ def _call_gemini_model(prompt, model, base_url, api_key):
                 json={
                     "system_instruction": {"parts": [{"text": GEMINI_SYSTEM_INSTRUCTION}]},
                     "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-                    "generationConfig": {"temperature": 0.7, "maxOutputTokens": 8192},
+                    "generationConfig": {"temperature": 0.7, "maxOutputTokens": 16000},
                 },
                 timeout=120,
             )
@@ -328,7 +328,10 @@ def _call_gemini_model(prompt, model, base_url, api_key):
             resp.raise_for_status()
             result = resp.json()
             try:
-                return result["candidates"][0]["content"]["parts"][0]["text"]
+                text = result["candidates"][0]["content"]["parts"][0]["text"]
+                usage = result.get("usageMetadata", {})
+                print(f"[gemini] tokens — prompt: {usage.get('promptTokenCount', '?')}, output: {usage.get('candidatesTokenCount', '?')}, total: {usage.get('totalTokenCount', '?')}", flush=True)
+                return text
             except (KeyError, IndexError) as exc:
                 raise RuntimeError(f"Unexpected Gemini response: {result}") from exc
         except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError,
