@@ -748,7 +748,7 @@ def _process_generate(payment_id, pet_data, email):
             )
             try:
                 requests.post(
-                    os.environ.get('FRONTEND_URL', 'https://petastral-signos.vercel.app') + '/api/payment/email',
+                    os.environ.get('FRONTEND_URL', 'https://signopet.com.br') + '/api/payment/email',
                     json={"to": "signopet@gmail.com", "subject": f"FALHA LAUDO - {pet_data.get('pet_name', 'pet')} ({email})", "html": f"<p>Payment {payment_id} falhou após 3 tentativas. {_capitulos_count} capítulos gerados.</p><p>Email cliente: {email}</p>"},
                     timeout=10,
                 )
@@ -779,7 +779,7 @@ def _process_generate(payment_id, pet_data, email):
                     import time
                     time.sleep(2)
 
-        base_url = os.environ.get('FRONTEND_URL', 'https://petastral-signos.vercel.app')
+        base_url = os.environ.get('FRONTEND_URL', 'https://signopet.com.br')
         _send_email(base_url, email, data.get('pet_name', ''), report_id)
 
         print(f"[generate] done — payment_id={payment_id} report_id={report_id}", flush=True)
