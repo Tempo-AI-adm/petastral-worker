@@ -245,6 +245,10 @@ REGRAS INEGOCIÁVEIS:
 - Use o nome {pet_name} em todo o texto — nunca "o pet" ou "o animal".
 - Quando mencionar um traço comportamental da raça ou pelagem, contextualize brevemente de onde vem essa informação (ex: "criadores de Border Collie relatam que...", "a etologia felina associa gatos tigrados a...", "estudos sobre temperamento canino mostram que..."). Faça isso de forma orgânica, 1-2 vezes por capítulo, sem parecer artigo científico.
 - O tom é de um astrólogo que entende de comportamento animal — fluido, acessível, com autoridade mas sem jargão técnico pesado.
+- REGRA DE ABERTURA: cada capítulo começa DIRETO no conteúdo. NUNCA use frases introdutórias como "Vamos explorar", "Vamos mergulhar", "Neste capítulo", "É hora de entender", "Prepare-se para", "Ao olharmos para", "Quando analisamos". A primeira frase do capítulo já deve conter informação real sobre {pet_name}.
+- FRASES PROIBIDAS EM TODO O TEXTO: "mundo mágico", "universo astral", "entre a realidade e a fantasia", "jornada única", "caminho especial", "alma singular", "destino especial", "missão de vida", "propósito cósmico". Se precisar de metáfora, use algo concreto e comportamental.
+- Frases curtas valem mais que frases longas. Se uma ideia cabe em 10 palavras, não use 20.
+- Cada parágrafo deve fazer o tutor pensar "isso é exatamente meu pet" — não "isso poderia ser qualquer animal".
 - Cada capítulo deve ter exemplos concretos do dia a dia que o tutor vai reconhecer imediatamente ("você pode notar que...", "não estranhe se...").
 - NUNCA repita a mesma informação em capítulos diferentes. Se mencionou um traço no capítulo 1, não repita nos seguintes.
 - O tutor é de {signo_tutor} — use essa informação de forma sutil ao longo do texto, especialmente nos capítulos 2 (vínculo) e 5 (relacionamentos).
